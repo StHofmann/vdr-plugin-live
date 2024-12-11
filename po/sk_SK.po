@@ -63,10 +63,6 @@ msgid "On archive HDD No."
 msgstr "Na archívne HDD."
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr "(%d:%02d)"
-
-#, c-format
 msgid "%a,"
 msgstr "%a,"
 
@@ -75,6 +71,10 @@ msgstr "%b %d %y"
 
 msgid "%I:%M %p"
 msgstr "%H:%M"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr "(%d:%02d)"
 
 #, c-format
 msgid "%d:%02d"
@@ -886,6 +886,9 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr ""
 
@@ -1043,6 +1046,12 @@ msgstr "Då¾ka ståpcovitého televízneho programu v hodinách"
 msgid "Show channels without EPG"
 msgstr "Zobrazi» kanály s EPG"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "©tartovacia stránka"
 
@@ -1091,9 +1100,6 @@ msgstr "Vymaza» plán"
 
 msgid "No timer defined"
 msgstr "®iadny plán nahrávania nie je stanovený"
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "Nahráva sa podµa plánu."

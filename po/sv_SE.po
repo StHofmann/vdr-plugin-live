@@ -62,10 +62,6 @@ msgid "On archive HDD No."
 msgstr "På arkiv-hd nr."
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr ""
-
-#, c-format
 msgid "%a,"
 msgstr ""
 
@@ -74,6 +70,10 @@ msgstr ""
 
 msgid "%I:%M %p"
 msgstr "%H:%M"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr ""
 
 #, c-format
 msgid "%d:%02d"
@@ -885,6 +885,9 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr ""
 
@@ -1042,6 +1045,12 @@ msgstr "Längd på MultiSchedule i timmar"
 msgid "Show channels without EPG"
 msgstr "Visa kanaler utan EPG"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "Startsida"
 
@@ -1090,9 +1099,6 @@ msgstr "Ta bort timer"
 
 msgid "No timer defined"
 msgstr "Ingen timer definierad"
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "Timern spelar in."

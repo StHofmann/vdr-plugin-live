@@ -1567,11 +1567,11 @@ div.epg_content div.about_head div div {
 }
 
 div.thumb {
-  width: 80px;
+  max-width: 80px;
   max-height: 40px;
   margin-right: 0.5em;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  margin-top: 2px;
+  margin-bottom: 2px;
   text-align: center;
   overflow: hidden;
   float: right;
@@ -1582,13 +1582,19 @@ a.thumb {
 }
 
 img.thumbpt {
-  width: 80px;
+  max-height: 36px;
+  object-fit: contain;
+  /*
   margin-top: -30px;
+  */
 }
 
 img.thumb {
-  width: 80px;
+  max-height: 36px;
+  object-fit: contain;
+  /*
   margin: 0 -100%;
+  */
 }
 
 .space {

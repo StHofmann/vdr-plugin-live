@@ -61,8 +61,13 @@ function addScraperImageTitle(s, image, pt, title, seasonEpisode, runtime, date)
     s.a += '\" title=\"'
     s.a += title
       if (seasonEpisode.length != 0) {
-        s.a += '<br/>S'
-        s.a += seasonEpisode
+        s.a += '<br/>'
+        if (seasonEpisode.charAt(0) == '0') {
+          s.a += seasonEpisode.slice(1);
+        } else  {
+          s.a += 'S'
+          s.a += seasonEpisode
+        }
       }
       if (runtime.length != 0) {
         s.a += '<br/>'
@@ -75,6 +80,7 @@ function addScraperImageTitle(s, image, pt, title, seasonEpisode, runtime, date)
   }
   s.a += '\"/></div>'
 }
+
 function addTruncMedia(s, text, lims, liml) {
 // lims: Text limit for small screens
 // liml: Text limit for wide screens
@@ -96,12 +102,21 @@ function addTruncMedia(s, text, lims, liml) {
 function add2ndLine(s, shortText, description) {
 // second line (title / short text). Truncate, use description, ...
   s.a += '<span class="short">'
-  if (shortText.length != 0) {
-    addTruncMedia(s, shortText, 50, 80)
-  } else {
-    if (description.length == 0) s.a += '&nbsp;'
-    else addTruncMedia(s, description, 50, 80)
+  var empty = true
+  const parts = shortText.split('<br/>')
+  if (parts[0].length > 0) {
+    addTruncMedia(s, parts[0], 50, 80)
+    empty = false
+  } else if (description.length > 0) {
+    addTruncMedia(s, description, 50, 80)
+    empty = false
   }
+  if (parts.length > 1) {
+    if (!empty) s.a += " - "
+    s.a += parts[1]
+    empty = false
+  }
+  if (empty) s.a += '&nbsp;'
   s.a += '</span>'
 }
 

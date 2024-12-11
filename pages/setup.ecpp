@@ -6,6 +6,7 @@
 #include <users.h>
 #include <live.h>
 #include <livefeatures.h>
+#include <services.h>
 
 using namespace vdrlive;
 
@@ -30,6 +31,7 @@ using namespace vdrlive;
   std::string markNewRec;
   std::string showIMDb;
   std::string showChannelsWithoutEPG;
+  std::string seriesFolders;
   std::string streamdevport;
   std::string streamdevtype;
   int authchanged = 0;
@@ -85,6 +87,7 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
 
       LiveSetup().SetShowIMDb(!showIMDb.empty());
       LiveSetup().SetShowChannelsWithoutEPG(!showChannelsWithoutEPG.empty());
+      LiveSetup().SetSeriesFolders(seriesFolders);
       LiveSetup().SaveSetup();
 
       message = tr("Setup saved.");
@@ -116,6 +119,7 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
   markNewRec = LiveSetup().GetMarkNewRec() ? "1" : "";
   showIMDb = LiveSetup().GetShowIMDb() ? "1" : "";
   showChannelsWithoutEPG = LiveSetup().GetShowChannelsWithoutEPG() ? "1" : "";
+  seriesFolders = LiveSetup().GetSeriesFolders();
 </%cpp>
 <& pageelems.doc_type &>
 <html>
@@ -298,7 +302,17 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
               <input type="checkbox" name="showChannelsWithoutEPG" id="showChannelsWithoutEPG" value="1"<%cpp> CHECKIF(!showChannelsWithoutEPG.empty()); </%cpp>/>
             </td>
           </tr>
-
+<%cpp>
+  cGetScraperVideo getScraperVideo;
+  bool scraperAvailable = getScraperVideo.call(LiveSetup().GetPluginScraper());
+  if (!scraperAvailable) {
+</%cpp>
+          <tr>
+            <td class="label leftcol"><div class="withmargin"><$ tr("Folders for scraping series episodes") $>:</div></td>
+            <td class="rightcol"><input type="text" name="seriesFolders" value="<$ seriesFolders $>" id="seriesFolders" />
+              <& tooltip.help text=(tr("Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'")) &></td>
+          </tr>
+% }
           <tr>
             <td class="label leftcol"><div class="withmargin"><$ tr("Start page") $>:</div></td>
             <td class="rightcol"><select name="startscreen" size="1" id="startscreen">

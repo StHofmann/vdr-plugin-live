@@ -163,36 +163,34 @@ function eventString(bottomrow, data) {
 // existing recording
 // do not html encode name! will be html encoded here
 function existingRecordingSR(s, col_span1, bottomrow, imdb_id, id, archiveDescr, image, pt, s_title, s_season_episode, s_runtime, s_date, day_time_duration, errors, hd_sd, channel_name, newR, name, short_text, description, durationDeviation, folder, duration, numTsFiles) {
-  if (archiveDescr.length != 0) col_span1--;
+// if (archiveDescr.length != 0) col_span1--;
   s.a += '<tr><td colspan='
   s.a += col_span1.toString()
   s.a += ' class=\"leftcol '
   s.a += bottomrow
   s.a += '\"><$ tr("Existing Recording:") $>'
+  s.a += '</td><td class=\"td-hidden-xs '
+  s.a += bottomrow
+  s.a += '\"><span class=\"hidden-xs withmargin recording_day\">'
+  s.a += day_time_duration
+  s.a += '</span><br/><table><tr><td class=\"noborder\">'
   if (archiveDescr.length != 0) {
-    s.a += '</td><td class=\"action '
-    s.a += bottomrow
-    s.a += '\"> <img class=\"icon\" src=\"<$ LiveSetup().GetThemedLink("img", "on_dvd.png") $>\" alt=\"on dvd\" title=\" />'
+    s.a += '<img class=\"action icon\" src=\"<$ LiveSetup().GetThemedLink("img", "on_dvd.png") $>\" alt=\"on dvd\" title=\"'
     s.a += archiveDescr
-    s.a += '/>'
+    s.a += '\"/>'
 <%cpp>
 #if VDRVERSNUM >= 20505
 </%cpp>
   } else {
-    s.a += '<br/><table><tr><td class=\"noborder\">'
     addErrorIcon(s, errors, durationDeviation, duration, numTsFiles)
     s.a += '</td><td class=\"noborder\">'
     addHdSdIcon(s, hd_sd, channel_name, \"\")
-    s.a += '</td></tr></table>'
 <%cpp>
 #endif
 </%cpp>
   }
-  s.a += '</td><td class=\"td-hidden-xs '
-  s.a += bottomrow
-  s.a += '\"><div class=\"hidden-xs recording_day\">'
-  s.a += day_time_duration
-  s.a += '</div></td><td class=\"rightcol '
+  s.a += '</td></tr></table>'
+  s.a += '</td><td class=\"rightcol '
   s.a += bottomrow
   s.a += '\">'
   addColEventRec(s, day_time_duration, 'recording_', id, name, folder, short_text, description)
@@ -261,8 +259,13 @@ function addEventRec(s, eventprefix, eventid, http_params, title, folder, shortT
     s.a += ')</span>'
   }
   s.a += '</div>'
-  add2ndLine(s, shortText, description)
-  s.a += '</a>'
+  if (shortText.length == 0 && description.length == 0) {
+    s.a += '</a>'
+    add2ndLine(s, shortText, description)
+  } else {
+    add2ndLine(s, shortText, description)
+    s.a += '</a>'
+  }
 }
 <#
 // [0] : ID (prefix "recording_" removed !!!)
@@ -311,11 +314,11 @@ function RecordingsSt_int(s, level, displayFolder, data) {
       s.a += '" />'
     }
     s.a += '</div></td>'  // end of recording_imgs
-%   if (!LiveSetup().GetTvscraperImageDir().empty() ) {
+%// if (!LiveSetup().GetTvscraperImageDir().empty() ) {
     s.a += '<td class=\"space\">'
       addScraperImageTitle(s, obj[3], obj[4], obj[5], obj[6], obj[7], obj[8]);
     s.a += '</td>'
-%   }
+%// }
     s.a += '<td class="td-hidden-xs"><div class="hidden-xs recording_day margin-bottom">'
     s.a += obj[9]
     s.a += '</div><div class="hidden-xs recording_channel">'

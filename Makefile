@@ -13,6 +13,7 @@ VERSION := $(shell awk '/$(HASH)define LIVEVERSION/ { print $$3 }' setup.h | sed
 # $(info $$VERSION is [${VERSION}])
 
 PKG_CONFIG ?= pkg-config
+
 ### Check for libpcre2
 HAVE_PCRE2 := $(shell if $(PKG_CONFIG) --exists libpcre2-8; then echo "1"; else echo "0"; fi )
 
@@ -149,20 +150,17 @@ I18Nmo: $(I18Nmo)
 	@true
 
 %.mo: %.po
-	$(if $(DISABLE_I18Nmo_txt),,@echo "Creating *.mo")
-	@msgfmt -c -o $@ $<
-	$(eval DISABLE_I18Nmo_txt := 1)
+	@echo MO $@
+	$(Q)msgfmt -c -o $@ $<
 
 %.po: $(I18Npot)
-	$(if $(DISABLE_I18Npo_txt),,@echo "Creating *.po")
-	@msgmerge -U --no-wrap --no-location --backup=none -q -N $@ $<
-	@touch $@
-	$(eval DISABLE_I18Npo_txt := 1)
+	@echo PO $@
+	$(Q)msgmerge -U --no-wrap --no-location --backup=none -q -N $@ $<
+	$(Q)touch $@
 
 $(I18Nmsgs): $(DESTDIR)$(LOCDIR)/%/LC_MESSAGES/vdr-$(PLUGIN).mo: $(PODIR)/%.mo
-	$(if $(DISABLE_I18Nmoinst_txt),,@echo "Installing *.mo")
-	@install -D -m644 $< $@
-	$(eval DISABLE_I18Nmoinst_txt := 1)
+	@echo IN $@
+	$(Q)install -D -m644 $< $@
 
 .PHONY: inst_I18Nmsg
 inst_I18Nmsg: $(I18Nmsgs)
@@ -217,7 +215,7 @@ lib: $(VERSIONSUFFIX) subdirs $(PLUGINOBJS) recursive-sofile
 soinst: $(SOINST)
 
 $(SOINST): $(SOFILE)
-	$(call PRETTY_PRINT,"Installing" $<)
+	$(call PRETTY_PRINT,"IN" $<)
 	$(Q)install -D $< $@
 
 .PHONY: install-lib
@@ -225,13 +223,15 @@ install-lib: lib recursive-soinst
 
 .PHONY: install-web
 install-web:
-	@mkdir -p $(DESTDIR)$(RESDIR)/plugins/$(PLUGIN)
-	@cp -a live/* $(DESTDIR)$(RESDIR)/plugins/$(PLUGIN)/
+	$(call PRETTY_PRINT,"IN web")
+	$(Q)mkdir -p $(CFGDIR)/plugins/$(PLUGIN)
+	$(Q)cp -au live/* $(CFGDIR)/plugins/$(PLUGIN)
 
 .PHONY: install-conf
 install-conf:
-	mkdir -p $(DESTDIR)$(CFGDIR)/plugins/$(PLUGIN)
-	@for i in conf/*; do\
+	$(call PRETTY_PRINT,"IN conf")
+	$(Q)mkdir -p $(DESTDIR)$(CFGDIR)/plugins/$(PLUGIN)
+	$(Q)for i in conf/*; do\
 	    if ! [ -e $(DESTDIR)$(CFGDIR)/plugins/$(PLUGIN)/$$i ] ; then\
 	        cp -p $$i $(DESTDIR)$(CFGDIR)/plugins/$(PLUGIN);\
 	    fi;\

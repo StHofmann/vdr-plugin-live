@@ -62,10 +62,6 @@ msgid "On archive HDD No."
 msgstr "En archivo HDD número"
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr ""
-
-#, c-format
 msgid "%a,"
 msgstr "%a,"
 
@@ -74,6 +70,10 @@ msgstr "%b %d %y"
 
 msgid "%I:%M %p"
 msgstr "%H:%M"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr ""
 
 #, c-format
 msgid "%d:%02d"
@@ -885,6 +885,9 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr ""
 
@@ -1042,6 +1045,12 @@ msgstr "Duración de la multi programación en horas"
 msgid "Show channels without EPG"
 msgstr "Mostrar canales sin EPG"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "Página de inicio"
 
@@ -1090,9 +1099,6 @@ msgstr "Borrar programación"
 
 msgid "No timer defined"
 msgstr "No hay definida programación"
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "La programación se está grabando."

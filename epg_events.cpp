@@ -8,6 +8,7 @@
 // STL headers need to be before VDR tools.h (included by <vdr/player.h>)
 #include <glob.h>
 #include <cassert>
+#include <filesystem>
 
 #include <vdr/plugin.h>
 #include <vdr/player.h>
@@ -497,6 +498,15 @@ namespace vdrlive
       std::list<std::string> images;
       // Scan for all images in recording directory
       ScanForRecImages(imageId, recfolder, images);
+      if (images.size() > 0) return images;
+      std::string colFolder = recfolder.data();
+      colFolder += "/../..";
+      std::filesystem::path path = colFolder;
+      ScanForRecImages(imageId, path.lexically_normal().string(), images);
+      if (images.size() > 0) return images;
+      colFolder += "/..";
+      path = colFolder;
+      ScanForRecImages(imageId, path.lexically_normal().string(), images);
       return images;
     }
 
@@ -575,6 +585,10 @@ bool appendEpgItem(cToSvConcat<0> &epg_item, RecordingsItemRecPtr &recItem, cons
   RecordingsTreePtr recordingsTree(LiveRecordingsManager()->GetRecordingsTree());
   const std::vector<RecordingsItemRecPtr> *recItems = recordingsTree->allRecordings(eSortOrder::duplicatesLanguage);
   bool recItemFound = searchNameDesc(recItem, recItems, Event, getScraperVideo.m_scraperVideo.get() );
+  if (!recItemFound) {
+    const std::vector<RecordingsItemRecPtr> *recItems = recordingsTree->allRecordings(eSortOrder::title);
+    recItemFound = searchTitle(recItem, recItems, Event, getScraperVideo.m_scraperVideo.get() );
+  }
 
   epg_item.append("[\"");
 // [0] : EPG ID  (without event_)
@@ -611,7 +625,12 @@ bool appendEpgItem(cToSvConcat<0> &epg_item, RecordingsItemRecPtr &recItem, cons
   AppendQuoteEscapedAndCorrectNonUTF8(epg_item, Event->Title() );
   epg_item.append("\",\"");
 // [12] : Shorttext
-  AppendHtmlEscapedAndCorrectNonUTF8(epg_item, Event->ShortText() );
+  std::string e_short_text(Event->ShortText() ? Event->ShortText() : "");
+  if (Event->ParentalRating()) {
+    e_short_text += "\n";
+    e_short_text += Event->GetParentalRatingString();
+  }
+  AppendHtmlEscapedAndCorrectNonUTF8(epg_item, e_short_text);
   epg_item.append("\",\"");
 // [13] : Description
   AppendTextTruncateOnWord(epg_item, Event->Description(), LiveSetup().GetMaxTooltipChars(), true);

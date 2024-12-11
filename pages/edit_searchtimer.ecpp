@@ -362,8 +362,8 @@ const char *TNT_ARRAY = "";
     for(unsigned int i=0; i<extEPGInfos.size(); i++)
       avoidrepeatscatselected.push_back(false);
     usetitle = true;
-    usesubtitle = true;
-    usedescr = true;
+    usesubtitle = false;
+    usedescr = false;
     priority = parse_int<int>(EPGSearchSetupValues::ReadValue("DefPriority"));
     lifetime = parse_int<int>(EPGSearchSetupValues::ReadValue("DefLifetime"));
     marginstart = parse_int<int>(EPGSearchSetupValues::ReadValue("DefMarginStart"));

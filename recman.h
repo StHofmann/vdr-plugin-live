@@ -169,15 +169,28 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
   /**
    * Class containing possible recordings compare functions
    */
-  enum class eSortOrder { name, date, errors, durationDeviation, duplicatesLanguage };
+  enum class eSortOrder
+  {
+    name,
+    title,
+    date,
+    duration,
+    errors,
+    durationDeviation,
+    duplicatesLanguage
+  };
+
   typedef bool (*tCompRec)(const RecordingsItemRecPtr &a, const RecordingsItemRecPtr &b);
   typedef bool (*tCompDir)(const RecordingsItemDirPtr &a, const RecordingsItemDirPtr &b);
   class RecordingsItemPtrCompare
   {
     public:
 // recs
+      static bool ByAscendingTitle(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
       static bool ByAscendingDate(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
+      static bool ByAscendingDuration(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
       static bool ByDuplicatesName(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
+      static bool ByDuplicatesTitle(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
       static bool ByDuplicates(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
       static bool ByDuplicatesLanguage(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
       static bool ByAscendingNameDescSort(const RecordingsItemRecPtr & first, const RecordingsItemRecPtr & second);
@@ -193,8 +206,9 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
 
       static tCompRec getComp(eSortOrder sortOrder);
   };
-// search a recording matching an EPG entry. The EPG entry is given with Name, ShortText, Description, Duration, scraperOverview
+// search a recording matching an EPG entry. The EPG entry is given with Name, Title, ShortText, Description, Duration, scraperOverview
   bool searchNameDesc(RecordingsItemRecPtr &RecItem, const std::vector<RecordingsItemRecPtr> *RecItems, const cEvent *event, cScraperVideo *scraperVideo);
+  bool searchTitle(RecordingsItemRecPtr &RecItem, const std::vector<RecordingsItemRecPtr> *RecItems, const cEvent *event, cScraperVideo *scraperVideo);
 
 /**
  *  A recordings item that resembles a directory with other
@@ -302,7 +316,9 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
 
       const cSv Name() const { return m_name; }
       const cSv NameForSearch() const { return m_name_for_search; }
-      virtual const char * ShortText() const { return RecInfo()? RecInfo()->ShortText():0; }
+      const cSv FolderForSearch() const { return m_folder_for_search; }
+      virtual const char * Title() const { return RecInfo()? RecInfo()->Title():0; }
+      virtual const char * ShortText() const { return m_short_text.c_str(); }
       virtual const char * Description() const { return RecInfo()? RecInfo()->Description():0; }
       virtual time_t StartTime() const { return m_recording->Start(); }
       virtual int Duration() const { return m_recording->FileName() ? m_recording->LengthInSeconds() : -1; } // duration in seconds
@@ -330,6 +346,7 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       }
       virtual void getScraperData(std::string *collectionName = NULL);
       bool scraperDataAvailable() const { return m_s_videoType == tMovie || m_s_videoType == tSeries; }
+      int scraperScannedRecording() const { return m_s_scanned_recording; }
       tvType scraperVideoType() const { return m_s_videoType; }
       int scraperCollectionId() const { return m_s_collection_id; }
       int scraperEpisodeNumber() const { return m_s_episode_number; }
@@ -338,8 +355,11 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       const cSv scraperReleaseDate() const { return m_s_release_date; }
       const cTvMedia &scraperImage() const;
       int language() const { return m_language; }
+      int CompareL(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
       int CompareTexts(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
+      int CompareT(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
       int CompareStD(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
+      bool orderDuplicates(const RecordingsItemRecPtr &second) const;
       bool orderDuplicates(const RecordingsItemRecPtr &second, bool alwaysShortText, bool lang = false) const;
 // To display the recording on the UI
       bool matchesFilter(cSv filter) const;
@@ -356,13 +376,18 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
     protected:
       const std::string m_name;
       std::string GetNameForSearch(cSv name);
-      const std::string m_name_for_search;
+      mutable std::string m_name_for_search;
+      const std::string m_folder;
+      std::string GetFolderForSearch(cSv folder);
+      const std::string m_folder_for_search;
+      mutable std::string m_short_text;
       const int m_idI = -1;
       const cRecording *m_recording = nullptr;
       const XXH128_hash_t m_hash;
       const int m_isArchived = 0;
       mutable int m_number_ts_files = -2;
       std::unique_ptr<cScraperVideo> m_scraperVideo;
+      bool m_s_scanned_recording = false;
       tvType m_s_videoType = tNone;
       int m_s_dbid = 0;
       std::string m_s_title = "";
@@ -397,6 +422,7 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
 
       virtual time_t StartTime() const { return m_event->StartTime(); }
       virtual int Duration() const { return m_event->Duration() / 60; } // duration in minutes
+      virtual const char * Title() const { return m_event->Title(); }
       virtual const char * ShortText() const { return m_event->ShortText(); }
       virtual const char * Description() const { return m_event->Description(); }
       virtual int DurationDeviation() const { return -2; }
@@ -448,6 +474,7 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       RecordingsItemDirPtr m_rootFileSystem;
       std::vector<RecordingsItemRecPtr> m_allRecordings;
       bool m_allRecordingsSorted = false;
+      std::vector<RecordingsItemRecPtr> m_allRecordings_title_sort;
       std::vector<RecordingsItemRecPtr> m_allRecordings_other_sort;
       eSortOrder m_sortOrder = (eSortOrder)-1;
       time_t m_creation_timestamp = 0;

@@ -37,7 +37,7 @@ all: libpages.a
 	$(Q)$(CXX) $(CXXFLAGS) $(TNTFLAGS) -c $(DEFINES) $(PLUGINFEATURES) $(INCLUDES) $<
 
 %.cpp: %.ecpp
-	$(call PRETTY_PRINT,"ECPP pages/" $@)
+	$(call PRETTY_PRINT,"EC pages/" $@)
 	$(Q)$(ECPPC) $(ECPPFLAGS) $(ECPPFLAGS_CPP) $<
 
 .%.edep: %.ecpp

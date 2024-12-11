@@ -65,10 +65,6 @@ msgid "On archive HDD No."
 msgstr "არქივში HDD-ზე ნომრით."
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr "(%d:%02d)"
-
-#, c-format
 msgid "%a,"
 msgstr "%a,"
 
@@ -77,6 +73,10 @@ msgstr "%b %d %y"
 
 msgid "%I:%M %p"
 msgstr "%I:%M %p"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr "(%d:%02d)"
 
 #, c-format
 msgid "%d:%02d"
@@ -888,6 +888,9 @@ msgstr "დალაგება:"
 msgid "Date"
 msgstr "თარიღი"
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr "დუბლიკატები"
 
@@ -1045,6 +1048,12 @@ msgstr "მრავალი განრიგის ხანგრძლი�
 msgid "Show channels without EPG"
 msgstr "EPG-ის გარეშე არხების ჩვენება"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "საწყისი გვერდი"
 
@@ -1093,9 +1102,6 @@ msgstr "ტაიმერის წაშლა"
 
 msgid "No timer defined"
 msgstr "ტაიმერ აღწერილი არაა"
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "ტაიმერი ჩანაწერია."

@@ -62,10 +62,6 @@ msgid "On archive HDD No."
 msgstr "Arkistointi-HDD:llä numero"
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr ""
-
-#, c-format
 msgid "%a,"
 msgstr "%a"
 
@@ -74,6 +70,10 @@ msgstr "%d.%m.%y"
 
 msgid "%I:%M %p"
 msgstr "%H:%M"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr ""
 
 #, c-format
 msgid "%d:%02d"
@@ -885,6 +885,9 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr "Kaksoiskappaleet"
 
@@ -1042,6 +1045,12 @@ msgstr "'Ohjelmaopas'-sivun kesto tunteina"
 msgid "Show channels without EPG"
 msgstr "Näytä ohjelmaoppaattomat kanavat"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "Aloitussivu"
 
@@ -1090,9 +1099,6 @@ msgstr "Poista ajastin"
 
 msgid "No timer defined"
 msgstr "Ajastinta ei ole määritelty"
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "Ajastinta tallennetaan"

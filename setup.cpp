@@ -50,7 +50,8 @@ Setup::Setup():
     m_markNewRec(1),
 
     m_showIMDb(1),
-    m_showChannelsWithoutEPG(0)
+    m_showChannelsWithoutEPG(0),
+    m_seriesFolders("")
 {
   m_adminPasswordMD5 = "4:" + MD5Hash("live");
   liveplugin = cPluginManager::GetPlugin("live");
@@ -238,6 +239,7 @@ bool Setup::ParseSetupEntry( char const* name, char const* value )
   else if ( strcmp( name, "MarkNewRec" ) == 0 ) { m_markNewRec = atoi(value); }
   else if ( strcmp( name, "ShowIMDb" ) == 0 ) { m_showIMDb = atoi(value); }
   else if ( strcmp( name, "ShowChannelsWithoutEPG" ) == 0 ) { m_showChannelsWithoutEPG = atoi(value); }
+  else if ( strcmp( name, "SeriesFolders" ) == 0 ) { m_seriesFolders = value; }
   else return false;
   return true;
 }
@@ -488,6 +490,7 @@ bool Setup::SaveSetup()
   liveplugin->SetupStore("MarkNewRec", m_markNewRec);
   liveplugin->SetupStore("ShowIMDb", m_showIMDb);
   liveplugin->SetupStore("ShowChannelsWithoutEPG", m_showChannelsWithoutEPG);
+  liveplugin->SetupStore("SeriesFolders", m_seriesFolders.c_str());
 
   return true;
 }

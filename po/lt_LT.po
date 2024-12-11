@@ -63,10 +63,6 @@ msgid "On archive HDD No."
 msgstr "DVB Nr."
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr ""
-
-#, c-format
 msgid "%a,"
 msgstr "%a,"
 
@@ -75,6 +71,10 @@ msgstr "%b %d %y"
 
 msgid "%I:%M %p"
 msgstr "%I:%M %p"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr ""
 
 #, c-format
 msgid "%d:%02d"
@@ -887,6 +887,9 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr ""
 
@@ -1045,6 +1048,12 @@ msgstr ""
 msgid "Show channels without EPG"
 msgstr "Rodyti EPG neturinčius kanalis"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "Pradinis puslapis"
 
@@ -1093,9 +1102,6 @@ msgstr "Ištrinti laikmatį"
 
 msgid "No timer defined"
 msgstr "Nenustatytas laikmatis"
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "Laikmatis įrašinėja."

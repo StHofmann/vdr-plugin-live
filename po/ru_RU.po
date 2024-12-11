@@ -62,10 +62,6 @@ msgid "On archive HDD No."
 msgstr "В архиве на HDD No."
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr ""
-
-#, c-format
 msgid "%a,"
 msgstr ""
 
@@ -74,6 +70,10 @@ msgstr ""
 
 msgid "%I:%M %p"
 msgstr "%H:%M"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr ""
 
 #, c-format
 msgid "%d:%02d"
@@ -885,6 +885,9 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr ""
 
@@ -1042,6 +1045,12 @@ msgstr "Продолжительность мультирасписания в �
 msgid "Show channels without EPG"
 msgstr "Показывать каналы без EPG"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "Стартовая страница"
 
@@ -1090,9 +1099,6 @@ msgstr "Удалить таймер"
 
 msgid "No timer defined"
 msgstr "Таймер не установлен"
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "Таймер записывает."

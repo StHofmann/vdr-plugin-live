@@ -8,8 +8,7 @@
    ######################
 */
 
-/*
-** Uncomment to adjust the width of each column in multicolumn view. In case of
+/* Uncomment to adjust the width of each column in multicolumn view. In case of
 ** many columns, min-width will be used in combination with vertical scrolling.
 */
 /*
@@ -34,11 +33,10 @@ table {
 ** images to 120 pixels. Keeping the comment displays the images at their
 ** native sizes in the popup windows.
 */
-/*
+
 .info-win span.epg_images {
   max-width: 120px;
 }
-*/
 
 
 /* Customize the settings below to match the local image dimensions and the
@@ -152,7 +150,7 @@ table {
 ** The margin should be the difference between the heights of scaled and unscaled
 ** EPG images and include some extra space for displaying the box shadow.
 */
-/*
+
 span.epg_images:has(> *:nth-child(1)) {
   margin-bottom: 210px;
 }
@@ -170,7 +168,6 @@ span.epg_images img.epg_image:hover {
 span.epg_images img.epg_image:not(:hover) {
   transition: var(--hover-transition-time) var(--hover-transition-function);
 }
-*/
 
 
 /* Uncomment the definitions below to enlarge recording images in list view
@@ -180,7 +177,7 @@ span.epg_images img.epg_image:not(:hover) {
 ** The margin should be the difference between the heights of scaled and unscaled
 ** thumb images and include some extra space for displaying the box shadow.
 */
-/*
+
 #form_recordings {
   margin-bottom: 250px
 }
@@ -202,18 +199,16 @@ div.thumb img.thumbpt:hover {
 div.thumb img.thumbpt:not(:hover) {
   transition: var(--hover-transition-time) var(--hover-transition-function);
 }
-*/
 
 
 /* Uncomment the definition below to have a light-gray background for channel
 ** logos, which will make white (parts of) channel logos visible. Keeping the
 ** comment displays the channel logo on the theme's default background.
 */
-/*
+
 img.channel_logo {
   background-color: var(--logo-background-color);
 }
-*/
 
 
 /* Uncomment the definitions below to enlarge channel logos with a light-color
@@ -223,7 +218,7 @@ img.channel_logo {
 ** The margin should be the difference between the heights of scaled and unscaled
 ** channel logos and include some extra space for displaying the box shadow.
 */
-/*
+
 table.listing:has(.channel_logo) {
   margin-bottom: 180px;
 }
@@ -242,15 +237,13 @@ img.channel_logo:hover {
 img.channel_logo:not(:hover) {
   transition: var(--hover-transition-time) var(--hover-transition-function);
 }
-*/
 
 
 /* Uncomment this to have all recording actions kept on a single row. Keeping
 ** the comment can cause wrapping the action buttons into multiple lines on
 ** small viewspaces.
 */
-/*
+
 .recording_item div.recording_actions {
   white-space: nowrap;
 }
-*/

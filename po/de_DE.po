@@ -64,10 +64,6 @@ msgid "On archive HDD No."
 msgstr "Auf Archiv-HDD Nr."
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr "(%d:%02d)"
-
-#, c-format
 msgid "%a,"
 msgstr "%a,"
 
@@ -76,6 +72,10 @@ msgstr "%d.%m.%y"
 
 msgid "%I:%M %p"
 msgstr "%H:%M"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr "(%d:%02d)"
 
 #, c-format
 msgid "%d:%02d"
@@ -570,7 +570,7 @@ msgid "Search for repeats."
 msgstr "Nach Wiederholungen suchen."
 
 msgid "Existing Recording:"
-msgstr "Vorhandene Aufnahme:"
+msgstr "Vorh. Aufzeichnung:"
 
 msgid "Stream this recording into browser."
 msgstr "Aufzeichnung im Browser abspielen."
@@ -609,10 +609,10 @@ msgid "Search timers"
 msgstr "Suchtimer"
 
 msgid "Recordings"
-msgstr "Aufnahmen"
+msgstr "Aufzeichnungen"
 
 msgid "Recordings (flat)"
-msgstr "Aufnahmen (flach)"
+msgstr "Aufz. (flach)"
 
 msgid "Remote Control"
 msgstr "Fernbedienung"
@@ -636,7 +636,7 @@ msgid "All channels"
 msgstr "Alle Kanäle"
 
 msgid "First (unnamed) group"
-msgstr "Erste (unbenannte) Gruppe"
+msgstr "Erste (namenlose) Gruppe"
 
 msgid "Now"
 msgstr "Jetzt"
@@ -762,7 +762,7 @@ msgid "Director"
 msgstr "Regisseur"
 
 msgid "Tagline:"
-msgstr "Kurze Inhaltsangabe:"
+msgstr "Kurzbeschreibung:"
 
 msgid "Overview:"
 msgstr "Inhalt:"
@@ -886,6 +886,9 @@ msgstr "Sortierung:"
 
 msgid "Date"
 msgstr "Datum"
+
+msgid "Duration"
+msgstr "Dauer"
 
 msgid "Duplicates"
 msgstr "Duplikate"
@@ -1024,10 +1027,10 @@ msgid "5 channels per group"
 msgstr "5 Kanäle pro Gruppe"
 
 msgid "Channel groups as defined in VDR"
-msgstr "In VDR definierte Kanalgruppen"
+msgstr "Im VDR definierte Kanalgruppen"
 
 msgid "All channels in one group"
-msgstr "Alle Kanäle in einer Gruppe"
+msgstr "Alle Kanäle als eine Gruppe"
 
 msgid "Individual channel groups"
 msgstr "Frei wählbare Kanalgruppen"
@@ -1043,6 +1046,12 @@ msgstr "Dauer der Zeitleiste in Stunden"
 
 msgid "Show channels without EPG"
 msgstr "Kanäle ohne EPG-Daten anzeigen"
+
+msgid "Folders for scraping series episodes"
+msgstr "Ordner zur Ermittlung von Serien-Episoden"
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr "Eine Aufzeichnung unterhalb eines solchen Ordners gilt als Teil einer Serie; Ordnernamen wie im Dateisystem kodieren und mehrere Ordner mit einem Semikolon (\";\") trennen"
 
 msgid "Start page"
 msgstr "Startseite"
@@ -1092,9 +1101,6 @@ msgstr "Timer löschen"
 
 msgid "No timer defined"
 msgstr "Keine Timer vorhanden"
-
-msgid "Duration"
-msgstr "Dauer"
 
 msgid "Timer is recording."
 msgstr "Timer zeichnet auf."

@@ -63,10 +63,6 @@ msgid "On archive HDD No."
 msgstr "W archiwum HDD nr"
 
 #, c-format
-msgid "(%d:%02d)"
-msgstr ""
-
-#, c-format
 msgid "%a,"
 msgstr ""
 
@@ -75,6 +71,10 @@ msgstr ""
 
 msgid "%I:%M %p"
 msgstr "%H:%M"
+
+#, c-format
+msgid "(%d:%02d)"
+msgstr ""
 
 #, c-format
 msgid "%d:%02d"
@@ -886,6 +886,9 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
+msgid "Duration"
+msgstr ""
+
 msgid "Duplicates"
 msgstr ""
 
@@ -1043,6 +1046,12 @@ msgstr "Czas jaki ma obejmować Multiprzewodnik (w godzinach) "
 msgid "Show channels without EPG"
 msgstr "Pokazuj kanały bez EPG"
 
+msgid "Folders for scraping series episodes"
+msgstr ""
+
+msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
 msgid "Start page"
 msgstr "Strona startowa"
 
@@ -1091,9 +1100,6 @@ msgstr "Usuń timer"
 
 msgid "No timer defined"
 msgstr "Brak zdefiniowanych timerów."
-
-msgid "Duration"
-msgstr ""
 
 msgid "Timer is recording."
 msgstr "Trwa nagranie timera."
