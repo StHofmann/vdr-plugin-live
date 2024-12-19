@@ -1,28 +1,30 @@
-
 #include "osd_status.h"
 
 #include <sstream>
 
 namespace vdrlive {
 
-OsdStatusMonitor::OsdStatusMonitor():title(),message(),red(),green(),yellow(),blue(),text(),selected(-1),lastUpdate(0){
-  memset(&tabs, 0, sizeof(tabs));
-}
+OsdStatusMonitor::OsdStatusMonitor():present_time(0),following_time(0),selected(-1),lastUpdate(0) {}
 OsdStatusMonitor::~OsdStatusMonitor() {
   OsdClear();
 }
 
 void OsdStatusMonitor::OsdClear() {
-  title = message = text = "";
+  title = message = text = channel_text = present_title = present_subtitle = following_title = following_subtitle = "";
   red = green = yellow = blue = "";
   items.Clear();
+  present_time = 0;
+  following_time = 0;
   selected = -1;
-  memset(&tabs, 0, sizeof(tabs));
   lastUpdate= clock();
 }
 
 void OsdStatusMonitor::OsdTitle(const char *Title) {
-  title = Title ? Title : "";
+  if (Title) {
+    if (title != Title) title = Title;
+  } else {
+    if (!title.empty() ) title.clear();
+  }
   lastUpdate= clock();
 }
 
@@ -39,17 +41,25 @@ void OsdStatusMonitor::OsdHelpKeys(const char *Red, const char *Green, const cha
   lastUpdate= clock();
 }
 
-void OsdStatusMonitor::OsdItem(const char *Text, int Index) {
-  const char* tab;
-  const char* colStart = Text;
-  for (int col = 0; col < MaxTabs &&
-      (tab = strchr(colStart, '\t')); col++) {
-    int width = tab - colStart + 1;
-    if (width > tabs[col])
-      tabs[col] = width;
-    colStart = colStart + width;
+void cLiveOsdItem::Update(const char* Text) {
+  if (Text) {
+    if (text != Text) text = Text;
+  } else {
+    if (!text.empty() ) text.clear();
   }
-  items.Add(new cLiveOsdItem(Text));
+}
+
+/* documentation in vdr source:
+  virtual void OsdItem(const char *Text, int Index) {}
+    // The OSD displays the given single line Text as menu item at Index.
+*/
+#if defined(OSDITEM) && OSDITEM == 2
+void OsdStatusMonitor::OsdItem2(const char *Text, int Index, bool Selectable) {
+  items.Add(new cLiveOsdItem(Text,Selectable));
+#else
+void OsdStatusMonitor::OsdItem(const char *Text, int Index) {
+  items.Add(new cLiveOsdItem(Text,true));
+#endif
   lastUpdate= clock();
 }
 
@@ -57,7 +67,7 @@ void OsdStatusMonitor::OsdCurrentItem(const char *Text) {
   int i = -1;
   int best = -1;
   int dist = items.Count();
-  cLiveOsdItem * currentItem = NULL;
+  cLiveOsdItem *currentItem = NULL;
   cLiveOsdItem *bestItem = NULL;
   for (cLiveOsdItem *item = items.First(); item; item = items.Next(item)) {
     if (++i == selected)
@@ -97,81 +107,43 @@ void OsdStatusMonitor::OsdCurrentItem(const char *Text) {
   }
 }
 
+/* documentation in vdr source:
+  virtual void OsdTextItem(const char *Text, bool Scroll) {}
+     // The OSD displays the given multi line text. If Text points to an
+     // actual string, that text shall be displayed and Scroll has no
+     // meaning. If Text is NULL, Scroll defines whether the previously
+     // received text shall be scrolled up (true) or down (false) and
+     // the text shall be redisplayed with the new offset.
+*/
+
 void OsdStatusMonitor::OsdTextItem(const char *Text, bool Scroll) {
   if (Text) {
-    text = Text;
-    //text= text.replace( text.begin(), text.end(), '\n', '|');
+    if (text != Text) text = Text;
   }
-  else {
-    text = "";
+// Ignore if called with Text == nullptr
+//   accoeding to doc, the previously received text shall be scrolled up (true) or down (false)
+//   we use scroll bar for that ...
+  lastUpdate= clock();
+}
+void OsdStatusMonitor::OsdChannel(const char *Text) {
+  if (Text) {
+    if (channel_text != Text) channel_text = Text;
+  } else {
+    if (!channel_text.empty() ) channel_text.clear();
   }
   lastUpdate= clock();
 }
-std::string const OsdStatusMonitor::GetTitleHtml() {return !title.empty() ? "<div class=\"osdTitle\">" + EncodeHtml(title) + "</div>" : "";}
-std::string const OsdStatusMonitor::GetMessageHtml() {return !message.empty() ? "<div class=\"osdMessage\">" + EncodeHtml(message) + "</div>" : "";}
-std::string const OsdStatusMonitor::GetRedHtml()  {return !red.empty() ? "<div class=\"osdButtonRed\">" + EncodeHtml(red) + "</div>" : "";}
-std::string const OsdStatusMonitor::GetGreenHtml() {return !green.empty() ? "<div class=\"osdButtonGreen\">" + EncodeHtml(green) + "</div>" : "";}
-std::string const OsdStatusMonitor::GetYellowHtml() {return !yellow.empty() ? "<div class=\"osdButtonYellow\">" + EncodeHtml(yellow) + "</div>" : "";}
-std::string const OsdStatusMonitor::GetBlueHtml() {return !blue.empty() ? "<div class=\"osdButtonBlue\">" + EncodeHtml(blue) + "</div>" : "";}
-std::string const OsdStatusMonitor::GetTextHtml() {return !text.empty() ? "<div class=\"osdText\">" +  EncodeHtml(text) + "</div>" : "";}
-std::string const OsdStatusMonitor::GetButtonsHtml() {
-  std::string buffer= GetRedHtml() + GetGreenHtml() + GetYellowHtml() + GetBlueHtml();
-  return !buffer.empty() ? "<div class=\"osdButtons\">" + buffer + "</div>" : "";
+
+void OsdStatusMonitor::OsdProgramme(time_t PresentTime, const char *PresentTitle, const char *PresentSubtitle, time_t FollowingTime, const char *FollowingTitle, const char *FollowingSubtitle) {
+  present_time = PresentTime;
+  present_title = cSv(PresentTitle);
+  present_subtitle = cSv(PresentSubtitle);
+  following_time = FollowingTime;
+  following_title = cSv(FollowingTitle);
+  following_subtitle = cSv(FollowingSubtitle);
+
+  lastUpdate= clock();
 }
-
-std::string const OsdStatusMonitor::GetItemsHtml(void){
-  std::string buffer= "";
-  for (cLiveOsdItem *item = items.First(); item; item = items.Next(item)) {
-    buffer += "<div class=\"osdItem";
-    if (item->isSelected()) buffer +=  " selected";
-    buffer += "\">";
-/*
-    if (tabs[0] > 0) {
-      buffer += EncodeHtml(item->Text(), true);
-      const char *tab = strchr(item->Text().c_str(), '\t');
-      if (tab && *(tab + 1) ) {
-        int charsT1 = tab - item->Text().c_str();
-        buffer.append(std::max(1, (int)tabs[0] - charsT1), ' ');
-        buffer += EncodeHtml(tab + 1);
-      }
-    } else {
-*/
-      buffer += EncodeHtml(item->Text());
-//    }
-    buffer += "</div>";
-  }
-  if (buffer.empty() ) return "";
-//  if (tabs[0] > 0) return std::string("<div class=\"osdItems\"><table>") + buffer + "</table></div>";
-  return std::string("<div class=\"osdItems\">") + buffer + "</div>";
-}
-
-std::string const OsdStatusMonitor::GetHtml(){
-  std::stringstream ss;
-  ss << lastUpdate;
-  return "<div class=\"osd\" data-time=\"" + ss.str() + "\">" + GetTitleHtml() + GetItemsHtml() + GetTextHtml() + GetMessageHtml() + GetButtonsHtml() + "</div>";
-}
-
-std::string const OsdStatusMonitor::EncodeHtml(const std::string& html, bool stopAtTab) {
-  std::stringstream ss;
-  std::string::const_iterator i;
-  for (i = html.begin(); i != html.end(); ++i) {
-    if (*i == '<')
-      ss << "&lt;";
-    else if (*i == '>')
-      ss << "&gt;";
-    else if (*i == '&')
-      ss << "&amp;";
-    else if (*i == '"')
-      ss << "&quot;";
-    else if (*i == '\t' && stopAtTab)
-      break;
-    else
-      ss << static_cast<char>(*i); // Copy untranslated
-  }
-  return ss.str();
-}
-
-
 
 OsdStatusMonitor& LiveOsdStatusMonitor()
 {

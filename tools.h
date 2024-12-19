@@ -1,7 +1,7 @@
 #ifndef VDR_LIVE_TOOLS_H
 #define VDR_LIVE_TOOLS_H
 
-// uncomment to debug lock sequence 
+// uncomment to debug lock sequence
 // #define DEBUG_LOCK
 
 // STL headers need to be before VDR tools.h (included by <vdr/channels.h>)
@@ -80,11 +80,11 @@ inline cToSvConcat<N>& AppendHtmlEscapedAndCorrectNonUTF8(cToSvConcat<N>& target
   for (size_t pos = 0; pos < text.length(); ++pos) {
     if ((unsigned char)text[pos] <= '\'') {
       switch(text[pos]) {
-        case  9:  target.append(notAppended, i); target.append("&tab;");  notAppended += i + 1; i = 0; break;
-        case 10:
-        case 13:
-  //        target.append(notAppended, i); target.append("&lt;br/&gt;");   notAppended += i + 1; i = 0; break;
-                  target.append(notAppended, i); target.append("<br/>");   notAppended += i + 1; i = 0; break;
+        case '\t': target.append(notAppended, i); target.append("&tab;");  notAppended += i + 1; i = 0; break;
+        case '\n':
+        case '\r':
+//                 target.append(notAppended, i); target.append("&lt;br/&gt;");   notAppended += i + 1; i = 0; break;
+                   target.append(notAppended, i); target.append("<br/>");  notAppended += i + 1; i = 0; break;
         case '&':  target.append(notAppended, i); target.append("&amp;");  notAppended += i + 1; i = 0; break;
         case '\"': target.append(notAppended, i); target.append("&quot;"); notAppended += i + 1; i = 0; break;
         case '\'': target.append(notAppended, i); target.append("&apos;"); notAppended += i + 1; i = 0; break;
@@ -104,8 +104,8 @@ inline cToSvConcat<N>& AppendHtmlEscapedAndCorrectNonUTF8(cToSvConcat<N>& target
         case '\\': target.append(notAppended, i); target.append("&bsol;"); notAppended += i + 1; i = 0; break;
         case '<':  target.append(notAppended, i); target.append("&lt;");   notAppended += i + 1; i = 0; break;
         case '>':  target.append(notAppended, i); target.append("&gt;");   notAppended += i + 1; i = 0; break;
-        default:  // replace control characters <
-          i++; break;  // just append these characters, no encoding
+        default:
+          ++i; break;  // just append these characters, no encoding
         }
       continue;
     }
@@ -115,8 +115,55 @@ inline cToSvConcat<N>& AppendHtmlEscapedAndCorrectNonUTF8(cToSvConcat<N>& target
     }
     int l = text.utf8CodepointIsValid(pos);
     if (l == 0) {
-// invalid UTF8, replace with ?
+      // invalid UTF8, replace with ?
       target.append(notAppended, i); target.append("?"); notAppended += i + 1; i = 0;
+      continue;
+    }
+    if (l == 3 && text[pos] == '\xEE' && text[pos+1] == '\x80') {
+      target.append(notAppended, i);
+      switch (text[pos+2]) {
+        case '\x80':
+          // refresh symbol (counter-clockwise arrow)
+          target.append("\xE2\x86\xBA");
+          break;
+        case '\x82':
+          // folder symbol
+          target.append("\xF0\x9F\x93\x81");
+          break;
+        case '\x83':
+          // non-breaking space
+          target.append("\xC2\xA0");
+          break;
+        case '\x8B':
+          // recording symbol
+          target.append("\xC2\xAE");
+          break;
+        case '\x8C':
+          // timer symbol (full coverage)
+          target.append("\xE2\x8F\xB2");
+          break;
+        case '\x91':
+          // repeat symbol (clockwise arrow)
+          target.append("\xE2\x9F\xB3");
+          break;
+        case '\x92':
+          // running symbol
+          target.append("\xE2\x96\xB6");
+          break;
+        case '\x94':
+          // partial timer symbol (at start)
+          target.append("\xE2\x97\xA0");
+          break;
+        case '\x95':
+          // partial timer symbol (at end)
+          target.append("\xE2\x97\xA1");
+          break;
+        default:
+          target.append(text.substr(pos, 3));
+          break;
+      }
+      notAppended += i + 3; i = 0;
+      pos += 2;
       continue;
     }
     i += l;
@@ -125,6 +172,7 @@ inline cToSvConcat<N>& AppendHtmlEscapedAndCorrectNonUTF8(cToSvConcat<N>& target
   target.append(notAppended, i);
   return target;
 }
+
 template <size_t N>
 inline cToSvConcat<N>& AppendQuoteEscapedAndCorrectNonUTF8(cToSvConcat<N>& target, cSv text) {
   size_t i = 0;                 // number of not yet appended chars
@@ -146,7 +194,7 @@ inline cToSvConcat<N>& AppendQuoteEscapedAndCorrectNonUTF8(cToSvConcat<N>& targe
     }
     if ((unsigned char)text[pos] <= '~') {
       if (text[pos]  == '\\') {
-        target.append(notAppended, i); target.append("\\"); notAppended += i; i = 1;
+        target.append(notAppended, i); target.append("\\"); notAppended += i; i = 1; // this results in appending two backslashs
       } else {
         ++i; // just append these characters, no encoding
       }
@@ -158,7 +206,7 @@ inline cToSvConcat<N>& AppendQuoteEscapedAndCorrectNonUTF8(cToSvConcat<N>& targe
     }
     int l = text.utf8CodepointIsValid(pos);
     if (l == 0) {
-// invalid UTF8, replace with ?
+      // invalid UTF8, replace with ?
       target.append(notAppended, i); target.append("?"); notAppended += i + 1; i = 0;
     } else {
       i += l;
