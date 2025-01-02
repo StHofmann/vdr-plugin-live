@@ -144,11 +144,11 @@ void OsdStatusMonitor::OsdTextItem(const char *Text, bool Scroll) {
   cOsdStatusMonitorLock lw(true);
   if (Text) {
     if (m_text != Text) m_text = Text;
+    m_lastUpdate= clock();
   }
 // Ignore if called with Text == nullptr
 //   according to doc, the previously received text shall be scrolled up (true) or down (false)
 //   we use scroll bar for that ...
-  m_lastUpdate= clock();
 }
 void OsdStatusMonitor::OsdChannel(const char *Text) {
   cOsdStatusMonitorLock lw(true);
