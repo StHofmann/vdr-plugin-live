@@ -3,7 +3,6 @@
 #include <string>
 #include <string_view>
 #include <setup.h>
-#include <tasks.h>
 #include <tools.h>
 #include <users.h>
 #include <recman.h>
@@ -12,9 +11,6 @@
 #include <stringhelpers.h>
 #include <livefeatures.h>
 
-#ifdef HAVE_PCRE2
-#include <StringMatch.h>
-#endif
 #include <vdr/videodir.h>
 
 #define MB_PER_MINUTE 25.75 // this is just an estimate!
@@ -85,33 +81,27 @@ currentFilter = filter;
 
 pageTitle = tr("Recordings");
 
-deleteResult = "";
 if (!todel.empty()) {
   if (!cUser::CurrentUserHasRightTo(UR_DELRECS))
     throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
   deletions.push_back(todel);
 }
-for (auto it = deletions.begin(); it != deletions.end(); ++it) {
-  if (cUser::CurrentUserHasRightTo(UR_DELRECS)) {
-    RemoveRecordingTask task(*it);
-    LiveTaskManager().Execute(task);
-/*
-    if (!task.Result())
-    deleteResult += std::string() + tr("ERROR:") + " " + task.Error() + "<br/>";
-    else
-*/
-    if (task.Result()) {
+
+deleteResult = "";
+if (cUser::CurrentUserHasRightTo(UR_DELRECS)) {
+  for (auto it = deletions.begin(); it != deletions.end(); ++it) {
+    std::string name;
+    if (RecordingsManager::DeleteRecording(*it, &name) == 0) {
       cToSvConcat delRec(tr("Deleted recording:"), " ");
-      delRec.appendReplace(task.RecName(), "~", "/");
+      delRec.appendReplace(name, "~", "/");
       delRec << "<br/>";
       deleteResult += std::string(delRec);
     }
   }
-  else {
-    throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
-  }
+  deletions.clear();
+} else {
+  throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
 }
-deletions.clear();
 
 int FreeMB, UsedMB;
 int Percent = cVideoDirectory::VideoDiskSpace(&FreeMB, &UsedMB);
@@ -120,7 +110,7 @@ int Hours = Minutes / 60;
 Minutes %= 60;
 diskinfo = cString::sprintf("%s %d%%  -  %2d:%02d %s", trVDR("Disk"), Percent, Hours, Minutes, trVDR("free"));
 
-RecordingsTreePtr recordingsTree(LiveRecordingsManager()->GetRecordingsTree());
+RecordingsTreePtr recordingsTree(RecordingsManager::GetRecordingsTree());
 
 // get data for all open nodes
 std::vector<int> available_recs;
@@ -301,12 +291,13 @@ if (currentFlat != "true") {
       direction = 1;
     }
     for (dirIter = dirIterS; dirIter != dirIterE; std::advance(dirIter, direction) ) {
-      if(direction == 0) dirIter--;
+      if(direction == 0) --dirIter;
 // this is the loop over the subdirs
 // each subdir is a node, which can be expanded (or not)
 // each subdir has an identifier in <ul> tag: fldr_<$ idHash $>
       RecordingsItemDirPtr recItem = *dirIter;
 
+      if (!recItem->matchesFilter(currentFilter)) continue;
       /* search trough directory for new recordings */
       bool newR = false;
       if ( LiveSetup().GetMarkNewRec() ) newR = recItem->checkNew();
@@ -366,14 +357,13 @@ if (currentFlat != "true") {
         recItems.push_back(recItem);
         if (recItems.size() >= max_items) break;
       }
-     } else {
+    } else {
       for (const RecordingsItemRecPtr &rPtr: *recordingsTree->allRecordings(sortOrder) ) {
         if (!rPtr->matchesFilter(currentFilter)) continue;
         recItems.push_back(rPtr);
         if (recItems.size() >= max_items) break;
       }
     }
-//    recItemsC = recordingsTree->allRecordings(sortOrder);
     recItemsC = &recItems;
   } else {
     recItems.clear();
@@ -402,7 +392,7 @@ if (write_recs && recItemsC) {
     recording_item->clear();
     rPtr->AppendAsJSArray(*recording_item);
   </%cpp>
-recs[<$cSv(cToSvInt(rPtr->IdI()))$>]=[<$$ recording_item->c_str() $>]
+recs[<$cSv(cToSvInt(rPtr->IdI()))$>]=[<$$ *recording_item $>]
   <%cpp>
   }
   std::chrono::duration<double> timeNeeded_recs = std::chrono::high_resolution_clock::now() - timeStart_recs;
@@ -426,9 +416,9 @@ if (currentSort != "duplicates" || currentFlat == "true") {
     </%cpp>
       <script>
 %   if (level == 0) {
-      document.write(rec_string_d([<$level$>, <$displayFolder$>, [ <$$ recording_item->c_str() $> ]]))
+      document.write(rec_string_d([<$level$>, <$displayFolder$>, [ <$$ *recording_item $> ]]))
 %   } else {
-      rec_ids["fldr_<$ parentIdHash $>"] = [<$level$>, <$displayFolder$>, [ <$$ recording_item->c_str() $> ]]
+      rec_ids["fldr_<$ parentIdHash $>"] = [<$level$>, <$displayFolder$>, [ <$$ *recording_item $> ]]
 %   }
       </script>
     <%cpp>
@@ -463,7 +453,7 @@ if (currentSort != "duplicates" || currentFlat == "true") {
           recording_item->clear();
           rPtr->AppendAsJSArray(*recording_item);
           </%cpp>
-recs[<$cSv(cToSvInt(rPtr->IdI()))$>]=[<$$ recording_item->c_str() $>]
+recs[<$cSv(cToSvInt(rPtr->IdI()))$>]=[<$$ *recording_item $>]
 %       }
 </script>
       <%cpp>
@@ -484,7 +474,7 @@ recs[<$cSv(cToSvInt(rPtr->IdI()))$>]=[<$$ recording_item->c_str() $>]
         </div>
         <ul id="fldr_<$ idHash $>" class="recordingslist" style="display: none;">
           <script>
-            rec_ids["fldr_<$ idHash $>"] = [1, 1, [ <$$ recording_item->c_str() $> ]]
+            rec_ids["fldr_<$ idHash $>"] = [1, 1, [ <$$ *recording_item $> ]]
           </script>
         </ul>
       </li>
@@ -513,12 +503,10 @@ recs[<$cSv(cToSvInt(rPtr->IdI()))$>]=[<$$ recording_item->c_str() $>]
 <a href="recordings.html?sort=<$ (currentSort == "errorsts") ? "errorsdur" : "errorsts" $>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>" <& setactive current="errors" &>><$ tr("Errors") $></a>
 <%cpp>
 #endif
-#ifdef HAVE_PCRE2
 </%cpp>
 <span class="sep">|</span>
 <span class="label bold"><$ tr("Filter") $>:&nbsp;<input type="text" name="filter" value="<$ currentFilter $>" id="filter" onchange="filterRecordings(this, '<$ currentSort $>', '<$currentFlat$>')" />&nbsp;<& tooltip.help text=(tr("Look in recordings titles and subtitles for the given string and display only the matching ones. You may also use perl compatible regular expressions (PCRE).")) &></span>
 <%cpp>
-#endif
 if (currentFlat != "true") {
 </%cpp>
 <span class="sep">|</span>
@@ -548,8 +536,9 @@ if (currentSort.compare(0, current.length(), current) == 0) { </%cpp>class="acti
   std::string filter;
   std::string flat;
   int history_num_back = 0;
+  std::string class_;
 </%args>
-<%cpp> { </%cpp><a href="epginfo.html?epgid=del_<$ id $>&sort=<$sort$>&filter=<$filter$>&flat=<$flat$>&history_num_back=<$history_num_back+1$>" <& tooltip.hint text=(tr("Delete this recording from hard disc!")) &>><img src="<$ LiveSetup().GetThemedLink("img", "del.png") $>" alt="" /></a><%cpp> } </%cpp>
+<%cpp> { </%cpp><a href="epginfo.html?epgid=del_<$ id $>&sort=<$sort$>&filter=<$filter$>&flat=<$flat$>&history_num_back=<$history_num_back+1$>" <& tooltip.hint text=(tr("Delete this recording from hard disc!")) &>><img class="<$ class_ $>" src="<$ LiveSetup().GetThemedLink("img", "del.png") $>" alt="" /></a><%cpp> } </%cpp>
 </%def>
 
 <# ---------------------------------------------------------------------- #>
@@ -560,8 +549,9 @@ if (currentSort.compare(0, current.length(), current) == 0) { </%cpp>class="acti
   std::string filter;
   std::string flat;
   int history_num_back = 0;
+  std::string class_;
 </%args>
-<%cpp> { </%cpp><a href="edit_recording.html?recid=<$ id $>&sort=<$sort$>&filter=<$filter$>&flat=<$flat$>&history_num_back=<$history_num_back+1$>"><img src="<$ LiveSetup().GetThemedLink("img", "edit.png") $>" alt="" <& tooltip.hint text=(tr("Edit recording")) &> /></a><%cpp> } </%cpp>
+<%cpp> { </%cpp><a href="edit_recording.html?recid=<$ id $>&sort=<$sort$>&filter=<$filter$>&flat=<$flat$>&history_num_back=<$history_num_back+1$>"><img class="<$ class_ $>" src="<$ LiveSetup().GetThemedLink("img", "edit.png") $>" alt="" <& tooltip.hint text=(tr("Edit recording")) &> /></a><%cpp> } </%cpp>
 </%def>
 
 <# ---------------------------------------------------------------------- #>
@@ -572,15 +562,18 @@ if (currentSort.compare(0, current.length(), current) == 0) { </%cpp>class="acti
   std::string history_num_back;
 </%args>
 <%cpp>
-  RecordingsManagerPtr recordings = LiveRecordingsManager();
-  const cRecording *recording = recordings->GetByMd5Hash(todel);
-  if (recording == nullptr)
-    throw HtmlError(tr("Couldn't find recording or no recordings available"));
+  std::string recording_Name;
+  {
+    LOCK_RECORDINGS_READ;
+    const cRecording *recording = RecordingsManager::GetByHash(todel, Recordings);
+    if (recording == nullptr)
+      throw HtmlError(tr("Couldn't find recording or no recordings available"));
+    recording_Name = recording->Name();
+  }
   if (!cUser::CurrentUserHasRightTo(UR_DELRECS))
     throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
   if (confirmed == "confirmed") {
-    RemoveRecordingTask task(todel);
-    LiveTaskManager().Execute(task);
+    RecordingsManager::DeleteRecording(todel);
 </%cpp>
 <!DOCTYPE html>
 <html>
@@ -595,7 +588,7 @@ if (currentSort.compare(0, current.length(), current) == 0) { </%cpp>class="acti
   </div>
   <div class="epg_content">
     <form>
-      <div class="about_head"><div><div><$ cSv(cToSvFormated(tr("Delete recording \"%s\"?"), recording->Name()?recording->Name():"No recording name available")) $></div></div></div>
+      <div class="about_head"><div><div><$ cToSvFormated(tr("Delete recording \"%s\"?"), recording_Name.empty()?"No recording name available":recording_Name.c_str() ) $></div></div></div>
       <input type="hidden" name="epgid" value="<$todel$>" \>
       <input type="hidden" name="delete_rec" value="confirmed" \>
       <input type="hidden" name="history_num_back" value="<$ history_num_back $>" id="history_del_<$ todel $>"\>
@@ -634,26 +627,20 @@ function cancel_delete() {
   int history_num_back = 0;
 </%args>
 %   if (cDevice::PrimaryDevice() && cDevice::PrimaryDevice()->HasDecoder() ) {
-<& pageelems.ajax_action_href action="play_recording" param=(id) tip=(tr("play this recording")) image="play.png" alt="" &>
+<& pageelems.ajax_action_href action="play_recording" param=(id) tip=(tr("play this recording")) image="play.png" alt="" class_="icon" &>
 %   }
-<& pageelems.hls_recording recId=(id) &>
-<& pageelems.m3u_playlist_recording recid=(id) &>
-<& pageelems.imdb_info_href title=(title) s_IMDB_ID=(s_IMDB_ID) &>
-<& recordings.edit_rec id=(id) sort=(sort) filter=(filter) flat=(flat) history_num_back=(history_num_back) &>
-<& recordings.del_rec id=(id) sort=(sort) filter=(filter) flat=(flat) history_num_back=(history_num_back) &>
+<& pageelems.hls_recording recId=(id) class_="icon" &>
+<& pageelems.m3u_playlist_recording recid=(id) class_="icon" &>
+<& pageelems.imdb_info_href title=(title) s_IMDB_ID=(s_IMDB_ID) class_="icon" &>
+<& recordings.edit_rec id=(id) sort=(sort) filter=(filter) flat=(flat) history_num_back=(history_num_back) class_="icon" &>
+<& recordings.del_rec id=(id) sort=(sort) filter=(filter) flat=(flat) history_num_back=(history_num_back) class_="icon" &>
 <%cpp>
-const cRecording* recording = NULL;
-if (!id.empty()) recording = LiveRecordingsManager()->GetByMd5Hash(id);
-if (recording && recording->Info() ) {
-  int recordingErrors = -1;
-#if VDRVERSNUM >= 20505
-  recordingErrors = recording->Info()->Errors();
-#endif
+const RecordingsItemRecPtr recPtr = RecordingsManager::GetByIdHash(id);
+if (recPtr && recPtr->scraperDataAvailable() ) {
   const char *sdhd = nullptr;
   cToSvConcat frameParams;
-#if VDRVERSNUM >= 20605
-  StringAppendFrameParams(frameParams, recording);
-  switch (recording->Info()->FrameWidth()) {
+  StringAppendFrameParams(frameParams, recPtr.get() );
+  switch (recPtr->FrameWidth()) {
     case 720:
       sdhd = "720x576";
       break;
@@ -669,24 +656,17 @@ if (recording && recording->Info() ) {
     default:
       break;
   }
-#endif
-
-  cGetScraperVideo getScraperVideo(NULL, recording);
-  bool scraperDataAvailable = getScraperVideo.call(LiveSetup().GetPluginTvscraper());
-  if (scraperDataAvailable) {
-    int video_SD_HD = getScraperVideo.m_scraperVideo->getHD();
-    if (!sdhd) sdhd = video_SD_HD == 0 ? "sd": video_SD_HD == 1 ? "hd": "ud";
-    cToSvConcat<0> duration;
-    if (recording->FileName() )
-      AppendDuration(duration, tr("%d:%02d"), recording->LengthInSeconds() );
+  int video_SD_HD = recPtr->SD_HD();
+  if (!sdhd) sdhd = video_SD_HD == 0 ? "sd": video_SD_HD == 1 ? "hd": "ud";
+  cToSvConcat duration;
+  AppendDuration(duration, tr("%d:%02d"), recPtr->Duration() );
 </%cpp>
 <img data-src="img/transparent.png" height="10px" />
 <span id="icons-<$id$>"></span>
 <script class="injectIcons">
-injectErrorHdSdIcon(\"icons-<$id$>\", <$cSv(cToSvInt(recordingErrors))$>, <$cSv(cToSvInt(getScraperVideo.m_scraperVideo->getDurationDeviation()))$>, \"<$sdhd$>\", \"<$cSv(recording->Info()->ChannelName())$>\", \"<$duration$>\", <$ GetNumberOfTsFiles(recording) $>, \"<$frameParams$>\")
+injectErrorHdSdIcon(\"icons-<$id$>\", <$cToSvInt(recPtr->RecordingErrors())$>, <$cToSvInt(recPtr->DurationDeviation())$>, \"<$sdhd$>\", \"<$recPtr->ChannelName()$>\", \"<$duration$>\", <$ cToSvInt(recPtr->NumberTsFiles()) $>, \"<$frameParams$>\")
 </script>
 <%cpp>
-  }
 }
 </%cpp>
 </%def>

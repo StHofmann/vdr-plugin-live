@@ -1,13 +1,23 @@
 <%pre>
 
-#include <grab.h>
 #include <setup.h>
 #include <tools.h>
 #include <users.h>
 
 #include <vdr/remote.h>
+#include <vdr/device.h>
 
 using namespace vdrlive;
+
+bool IsGrabImageAvailable() {
+  cDevice* device = cDevice::PrimaryDevice();
+  if (!device) return false;
+  int size = 0;
+  uchar* image = device->GrabImage(size, true, 80, 729, 480);
+  if (!image) return false;
+  free(image);
+  return true;
+}
 
 </%pre>
 <%args>
@@ -17,7 +27,7 @@ using namespace vdrlive;
 bool logged_in(false);
 </%session>
 <%request scope="global">
-  cChannel* Channel;
+  tChannelID channelID;
 </%request>
 <%include>page_init.eh</%include>
 <{
@@ -33,24 +43,22 @@ if (!logged_in && LiveSetup().UseAuth()) {
 
   pageTitle = tr("Remote Control");
 
-  // cChannel* Channel; (see %request above)
-  if ( channel > 0 ) {
+  {
+    const cChannel* Channel = nullptr;
     LOCK_CHANNELS_READ;
-    Channel = (cChannel *)Channels->GetByNumber( channel );
-  }
-  else {
-    if (cDevice::CurrentChannel()) {
-      LOCK_CHANNELS_READ;
-      Channel = (cChannel *)Channels->GetByNumber(cDevice::CurrentChannel());
+    if (channel > 0) {
+      Channel = Channels->GetByNumber(channel);
+    } else {
+      if (cDevice::CurrentChannel()) {
+        Channel = Channels->GetByNumber(cDevice::CurrentChannel());
+      } else {
+        Channel = Channels->Get(Channels->GetNextNormal( -1 ));
+      }
     }
-    else {
-      LOCK_CHANNELS_READ;
-      Channel = (cChannel *)Channels->Get( Channels->GetNextNormal( -1 ) );
-    }
+    if (!Channel)
+      throw HtmlError( tr("Couldn't find channel or no channels available. Maybe you mistyped your request?") );
+    channelID = Channel->GetChannelID();
   }
-  if ( Channel == 0 )
-    throw HtmlError( tr("Couldn't find channel or no channels available. Maybe you mistyped your request?") );
-
 </%cpp>
 <& pageelems.doc_type &>
 <html>
@@ -234,7 +242,7 @@ if (!logged_in && LiveSetup().UseAuth()) {
     var element = document.getElementsByName('interval').item(0);
     if (!element)
       return;
-    var items = new Array(1000, 2000, 5000);
+    var items = new Array(50, 100, 500, 1000, 2000, 5000);
     element.options.length = items.length;
     for (i = 0; i < items.length; ++i) {
       element.options[i].value = items[i];
@@ -302,9 +310,9 @@ if (!logged_in && LiveSetup().UseAuth()) {
     <& menu active="remote" component=("remote.remote_actions")>
     <div class="inhalt" id="remoteDiv">
       <div class="screenshot" id="screenshot">
-<{        if (LiveGrabImageManager().CanGrab()) {  }>
+%       if (IsGrabImageAvailable() ) {
           <img src="screenshot.jpg" name="vdrlive" />
-<{        }                      }>
+%       }
         <div id="osd"></div>
       </div>
       <div>
@@ -327,7 +335,7 @@ if (!logged_in && LiveSetup().UseAuth()) {
           <area href="#" shape="circle" coords="125,190,13" alt="P-" onclick="return KeyPress(<$ kChanDn $>)" title="&amp;lt;PgDn&amp;gt;" />
           <area href="#" shape="circle" coords="81,174,8" alt="Mute" onclick="return KeyPress(<$ kMute $>)" title="&amp;lt;F10&amp;gt;" />
           <area href="#" shape="circle" coords="81,202,11" alt="Record" onclick="return KeyPress(<$ kRecord $>)" />
-          <area href="#" shape="poly" coords="39,215,29,227,30,235,39,236,51,222,49,215,43,213" alt="Menu" onclick="return KeyPress(<$ kMenu $>)" title="&amp;lt;Tab&amp;gt;,&amp;lt;F9&amp;gt;" />
+          <area href="#" shape="poly" coords="39,215,29,227,30,235,39,236,51,222,49,215,43,213" alt="Menu" onclick="return KeyPress(<$ kMenu $>)" title="&amp;lt;Tab&amp;gt;, &amp;lt;F9&amp;gt;" />
           <area href="#" shape="poly" coords="119,213,127,219,135,230,132,235,127,236,119,231,114,223,113,215" alt="Exit" onclick="return KeyPress(<$ kBack $>)" title="&amp;lt;Esc&amp;gt;" />
           <area href="#" shape="poly" coords="33,289,31,298,43,310,51,308,54,300,41,287" alt="Subtitles" onclick="return KeyPress(<$ kSubtitles $>)" />
           <area href="#" shape="poly" coords="131,289,133,298,122,310,112,308,110,300,122,287" alt="Audio" onclick="return KeyPress(<$ kAudio $>)" />
@@ -350,16 +358,16 @@ if (!logged_in && LiveSetup().UseAuth()) {
 <%def remote_actions>
 <form id="remote"><span>
 <span class="label bold"><$ tr("Selection") $>: </span>
-%  if ( LiveGrabImageManager().CanGrab()) {
+%  if (IsGrabImageAvailable() ) {
    <input type="radio" name="screenCon" id="screenCon_grab" onchange="changeScreenContent()"/>&nbsp;<label for="screenCon_grab"><$ tr("Snapshot interval") $>:</label> <select name="interval" onchange="ChangeInterval()"></select>
 % }
  <input type="radio" name="screenCon" id="screenCon_osd" onchange="changeScreenContent()" />&nbsp;<label for="screenCon_osd">OSD</label>
  <input type="radio" name="screenCon" id="screenCon_none" onchange="changeScreenContent()" />&nbsp;<label for="screenCon_osd"><$ tr("Stop") $></label>
 <span class="sep">&nbsp;</span>
-% if (Channel) {
+% if (channelID.Valid() ) {
 <span class="sep">|</span>
- <& pageelems.hls_channel channelId=(Channel->GetChannelID()) &>
- <& pageelems.m3u_playlist_channel channelId=(Channel->GetChannelID()) &>
+ <& pageelems.hls_channel channelId=(channelID) &>
+ <& pageelems.m3u_playlist_channel channelId=(channelID) &>
 % }
 </span></form>
 </%def>

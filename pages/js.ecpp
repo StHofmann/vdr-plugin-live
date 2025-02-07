@@ -28,7 +28,7 @@ function addErrorIcon(s, numErrors, durationDeviation, duration, numTsFiles) {
     if (numErrors  > 0) s.a += 'RecordingErrors.png'
     if (numErrors  < 0) s.a += 'NotCheckedForRecordingErrors.png'
   }
-  s.a += '\" width = \"16px\" title=\"'
+  s.a += '\" title=\"'
   if (numErrors == 0) s.a += '<$tr("No recording errors")$>'
   if (numErrors  > 0) s.a += '<$tr("Number of recording errors:")$> ' + String(numErrors)
   if (numErrors  < 0) s.a += '<$tr("Recording errors unknown")$>'
@@ -47,7 +47,7 @@ function addErrorIcon(s, numErrors, durationDeviation, duration, numTsFiles) {
 function addHdSdIcon(s, hdsd, toolTip, frameParams) {
   s.a += '<div class=\"recording_sd_hd\"><img class=\"icon\" src=\"<$LiveSetup().GetThemedLinkPrefixImg()$>'
   s.a += hdsd
-  s.a += '.png\" width = \"25px\" title=\"'
+  s.a += '.png\" title=\"'
   if (frameParams.length != 0) {
     s.a += frameParams
     s.a += '<br/>'
@@ -75,7 +75,7 @@ function IMDBS(s, im_db, name) {
 
 <#
 // [0] : EPG ID  (without event_)
-// [1] : Timer ID = SortedTimers::EncodeDomId(LiveTimerManager().GetTimers().GetTimerId(*timer))
+// [1] : Timer ID = SortedTimers::EncodeDomId(SortedTimers::GetTimerId(*timer))
 //               (without timer_)
 // [2] : scraper s_IMDB_ID
 // [3] : image.path  (nach "/tvscraper/")

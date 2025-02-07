@@ -12,8 +12,8 @@
 #include "stringhelpers.h"
 #include <vdr/menuitems.h>
 
-#define LIVEVERSION "3.4.0"
-#define LIVEVERSNUM 30400
+#define LIVEVERSION "3.4.1"
+#define LIVEVERSNUM 30401
 #define LIVESUMMARY trNOOP("Live Interactive VDR Environment")
 
 namespace vdrlive {
@@ -106,7 +106,7 @@ class Setup
 
     void SetLastChannel(int lastChannel) { m_lastChannel = lastChannel; }
     void SetAdminLogin(std::string const & login) { m_adminLogin = login; }
-    std::string SetAdminPassword(std::string password);
+    std::string SetAdminPassword(const std::string &password);
     void SetUseAuth(int auth) { m_useAuth = auth; }
     void SetScreenshotInterval(int interval) { m_screenshotInterval = interval; }
     void SetTimes(std::string const & times) { m_times = times; }
@@ -139,7 +139,7 @@ class Setup
 
     bool ParseSetupEntry( char const* name, char const* value );
 
-    bool CheckLocalNet(std::string const & ip);
+    bool CheckLocalNet(cSv ip);
     time_t GetVdrStart() { return m_vdr_start; }
 
 
@@ -162,8 +162,8 @@ class Setup
     IpList m_serverIps;
     std::string m_epgimagedir;
     std::string m_tvscraperimagedir;
-                cPlugin *m_p_tvscraper;
-                cPlugin *m_p_scraper;
+    cPlugin *m_p_tvscraper;
+    cPlugin *m_p_scraper;
     std::string m_chanlogodir;
 
     // setup options

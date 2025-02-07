@@ -20,41 +20,34 @@ using namespace vdrlive;
 </%session>
 <%cpp>
   if (!logged_in && LiveSetup().UseAuth()) {
-    cToSvConcat<0> targetUrl = "/login.html?redirect=";
+    cToSvConcat targetUrl = "/login.html?redirect=";
     targetUrl.appendUrlEscaped(request.getQuery());
     return reply.redirect(targetUrl.data());
   }
 </%cpp>
 <select name="<$ name $>" id="<$ name $>" <{ reply.out() << ( !onchange.empty() ? "onchange=\""+onchange+"\"" : "" ); }>>
 <%cpp>
-  bool selectedFound = false;
-  next_recording = "";
-//  recId.reserve(8 + 128/4);  // 32 hash bytes (4 bits per hex digit) plus some spare bytes
+  XXH128_hash_t selected_rec_hash = {0, 0};
+  if (selected.length() == 42 && selected.compare(0, 10, "recording_") == 0)
+    selected_rec_hash = parse_hex_128(selected.substr(10));
+
+  bool prev_selected = false;
   cToSvConcat<8 + 128/4> recId; // 32 hash bytes (4 bits per hex digit) plus some spare bytes
-  eSortOrder sortOrder = vdrlive::eSortOrder::name; // default
-  RecordingsTreePtr recordingsTree(LiveRecordingsManager()->GetRecordingsTree());
-  const std::vector<RecordingsItemRecPtr>* allRecordings = recordingsTree->allRecordings(sortOrder);
+  RecordingsTreePtr recordingsTree(RecordingsManager::GetRecordingsTree());
+  const std::vector<RecordingsItemRecPtr>* allRecordings = recordingsTree->allRecordings(vdrlive::eSortOrder::name);
   for (const RecordingsItemRecPtr &rPtr : *allRecordings ) {
-    if (!selectedFound) {
-      prev_recording = cSv(recId);
-    }
-    recId.clear();
-    recId.appendHex(rPtr->IdHash());
-    bool isSelected = selected == cSv(recId);
+    bool isSelected = XXH128_isEqual(rPtr->IdHash(), selected_rec_hash);
+    if (isSelected) prev_recording = cSv(recId);  // this is the recId from last loop
+
+    recId.clear(); recId.appendHex(rPtr->IdHash());
+
+    if (prev_selected) next_recording = cSv(recId);
+    prev_selected = isSelected;
 </%cpp>
-    <option value="recording_<$$ cSv(recId) $>"<? isSelected ? " selected=\"selected\"" ?>><$ rPtr->Name() $>
-<%cpp>
-    std::string folder = (const char*)rPtr->Recording()->Folder();
-    if (!folder.empty()) {
-</%cpp>
-      (<$ folder $>)
+    <option value="recording_<$$ recId $>"<? isSelected ? " selected=\"selected\"" ?>><$ rPtr->Name() $>
+%     if (rPtr->Folder()) {
+      (<$ rPtr->Folder() $>)
 %    }
     </option>
-<%cpp>
-    if (selectedFound && next_recording.empty()) {
-      next_recording = cSv(recId);
-    }
-    selectedFound |= isSelected;
-  }
-</%cpp>
+% }
 </select>

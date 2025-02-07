@@ -25,39 +25,14 @@
 
 namespace vdrlive {
 
-template<std::size_t N>
-cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *rec) {
-#if VDRVERSNUM >= 20605
-  if (!rec || ! rec->Info() ) return s;
-  if (rec->Info()->FrameWidth() && rec->Info()->FrameHeight() ) {
-    s << rec->Info()->FrameWidth() << 'x' << rec->Info()->FrameHeight();
-    if (rec->Info()->FramesPerSecond() > 0) {
-      s.append("/");
-      s.appendFormated("%.2g", rec->Info()->FramesPerSecond() );
-      if (rec->Info()->ScanType() != stUnknown)
-        s.append(1, rec->Info()->ScanTypeChar());
-     }
-     if (rec->Info()->AspectRatio() != arUnknown)
-       s << ' ' << rec->Info()->AspectRatioText();
-  }
-#endif
-  return s;
-}
-
-  // Forward declarations from epg_events.h
-  class EpgInfo;
-  typedef std::shared_ptr<EpgInfo> EpgInfoPtr;
-
   /**
    *  Some forward declarations
    */
-  class RecordingsManager;
   class RecordingsTree;
-  class RecordingsTreePtr;
   class RecordingsItemDir;
   class RecordingsItemRec;
 
-  typedef std::shared_ptr<RecordingsManager> RecordingsManagerPtr;
+  typedef std::shared_ptr<RecordingsTree>    RecordingsTreePtr;
   typedef std::shared_ptr<RecordingsItemDir> RecordingsItemDirPtr;
   typedef std::shared_ptr<RecordingsItemRec> RecordingsItemRecPtr;
 
@@ -67,7 +42,7 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
   bool operator< (int a, const RecordingsItemDirPtr &b);
   bool operator< (const RecordingsItemDirPtr &a, int b);
 
-  int GetNumberOfTsFiles(const cRecording* recording);
+  int GetNumberOfTsFiles(int recId);
 
   /**
    *  Class for managing recordings inside the live plugin. It
@@ -78,26 +53,24 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
    */
   class RecordingsManager
   {
-    friend RecordingsManagerPtr LiveRecordingsManager();
-
     public:
       /**
        *  Returns a shared pointer to a fully populated
        *  recordings tree.
        */
-      RecordingsTreePtr GetRecordingsTree() const;
+      static RecordingsTreePtr GetRecordingsTree();
 
       /**
        *  fetches a cRecording from VDR's Recordings collection. Returns
        *  NULL if recording was not found
        */
-      cRecording const* GetByMd5Hash(cSv hash) const;
+      static const cRecording *GetByHash(cSv hash, const cRecordings* Recordings);
 
       /**
        *  fetches a cRecording from the RecordingsTree collection. Returns
        *  NULL if recording was not found
        */
-      RecordingsItemRecPtr const GetByIdHash(cSv hash) const;
+      static RecordingsItemRecPtr const GetByIdHash(cSv hash);
 
       /**
        *  Move a recording with the given hash according to
@@ -109,25 +82,31 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
        *  @param shorttext new short text of the recording.
        *  @param description new description of the recording.
        */
-      bool UpdateRecording(cRecording const * recording, cSv directory, cSv name, bool copy, cSv title, cSv shorttext, cSv description) const;
+      static bool UpdateRecording(cSv hash, cSv directory, cSv name, bool copy, cSv title, cSv shorttext, cSv description);
 
       /**
        *  Delete recording resume with the given hash according to
        *  VDRs recording mechanisms.
        */
-      void DeleteResume(cRecording const * recording) const;
+      static void DeleteResume(cRecording const * recording);
 
       /**
        *  Delete recording marks with the given hash according to
        *  VDRs recording mechanisms.
        */
-      void DeleteMarks(cRecording const * recording) const;
+      static void DeleteMarks(cRecording const * recording);
 
       /**
        *  Delete a recording with the given hash according to
        *  VDRs recording deletion mechanisms.
+       *  If name is provided, it is set to recording->Name()  (name for use in Menues)
+       *  return:
+       *    0 success
+       *    1 no recording with recording_hash exists (name will not be provided ...)
+       *    2 recoring is in use
+       *    3 other error (recording->Delete() returned false)
        */
-      void DeleteRecording(cRecording const * recording) const;
+      static int DeleteRecording(cSv recording_hash, std::string *name = nullptr);
 
       /**
        *  Determine whether the recording has been archived on
@@ -144,13 +123,21 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
 
       static std::string const GetArchiveDescr(cRecording const * recording);
 
+      /**
+       *  Is this recording currently played?
+       *  Return codes:
+       *    0: this recording is currently played
+       *    1: this recording does not exist
+       *    2: no recording is played
+       *    3: another recording is played
+       *  Also return *fileName=recording->FileName() if requested
+       */
+      static int CheckReplay(cSv recording_hash, std::string *fileName = nullptr);
+
     private:
-      RecordingsManager();
-
       static bool StateChanged();
-      static RecordingsManagerPtr EnsureValidData();
+      static void EnsureValidData();
 
-      static std::weak_ptr<RecordingsManager> m_recMan;
       static std::shared_ptr<RecordingsTree> m_recTree;
       static cStateKey m_recordingsStateKey;
       static time_t m_last_recordings_update;
@@ -169,17 +156,7 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
   /**
    * Class containing possible recordings compare functions
    */
-  enum class eSortOrder
-  {
-    name,
-    title,
-    date,
-    duration,
-    errors,
-    durationDeviation,
-    duplicatesLanguage
-  };
-
+  enum class eSortOrder { name, title, date, duration, errors, durationDeviation, duplicatesLanguage };
   typedef bool (*tCompRec)(const RecordingsItemRecPtr &a, const RecordingsItemRecPtr &b);
   typedef bool (*tCompDir)(const RecordingsItemDirPtr &a, const RecordingsItemDirPtr &b);
   class RecordingsItemPtrCompare
@@ -239,6 +216,7 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       const std::vector<RecordingsItemRecPtr> *getRecordings(eSortOrder sortOrder);
       const std::vector<RecordingsItemDirPtr> *getDirs() { return &m_subdirs; }
       bool checkNew() const;
+      bool matchesFilter(cSv filter) const;
       void addDirList(std::vector<std::string> &dirs, cSv basePath) const;
 
       void setTvShow(const RecordingsItemRecPtr &rPtr);
@@ -246,8 +224,8 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       int scraperCollectionId() const { return m_s_collection_id; }
       int scraperSeasonNumber() const { return m_s_season_number; }
       const cTvMedia &scraperImage() const;
-       bool recEntriesSorted() const { return m_cmp_rec != NULL; }
-       bool dirEntriesSorted() const { return m_cmp_dir != NULL; }
+      bool recEntriesSorted() const { return m_cmp_rec != NULL; }
+      bool dirEntriesSorted() const { return m_cmp_dir != NULL; }
 
     protected:
       std::string m_name;
@@ -309,62 +287,67 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
     friend class RecordingsItemDir;
     friend class RecordingsItemDirSeason;
     friend class RecordingsItemDirCollection;
+    friend class RecordingsItemPtrCompare;
     public:
       RecordingsItemRec(cSv name, const cRecording* recording, cMeasureTime *timeIdentify, cMeasureTime *timeOverview, cMeasureTime *timeImage, cMeasureTime *timeDurationDeviation, cMeasureTime *timeNumTsFiles, cMeasureTime *timeItemRec);
 
       virtual ~RecordingsItemRec();
 
-      const cSv Name() const { return m_name; }
-      const cSv NameForSearch() const { return m_name_for_search; }
-      const cSv FolderForSearch() const { return m_folder_for_search; }
-      virtual const char * Title() const { return RecInfo()? RecInfo()->Title():0; }
-      virtual const char * ShortText() const { return m_short_text.c_str(); }
-      virtual const char * Description() const { return RecInfo()? RecInfo()->Description():0; }
-      virtual time_t StartTime() const { return m_recording->Start(); }
-      virtual int Duration() const { return m_recording->FileName() ? m_recording->LengthInSeconds() : -1; } // duration in seconds
-      virtual int DurationDeviation() const { return m_duration_deviation; } // duration deviation in seconds
-      virtual int FileSizeMB() const { return m_recording->FileName() ? m_recording->FileSizeMB() : -1; } // file size in MB
+      cSv Name() const { return m_name; }
+      cSv NameForSearch() const { return m_name_for_search; }
+      cSv FolderForSearch() const { return m_folder_for_search; }
+      const char *Title() const { return m_title.c_str(); }
+      const char *ShortText() const { return m_shortText.c_str(); }
+      const char *Description() const { return m_description.c_str(); }
+      cSv ChannelName() const { return m_channelName; }
+      const char *Folder() const { return *m_folder; }
+      int FileSizeMB() const { return m_fileSizeMB; }
+      time_t StartTime() const { return m_startTime; }
+      int Duration() const { return m_duration; } // duration in seconds
+      int DurationDeviation() const { return m_duration_deviation; } // duration deviation in seconds
       int IdI() const { return m_idI;}
-      virtual const XXH128_hash_t IdHash() const { return m_hash; }
-
-      virtual const cRecording* Recording() const { return m_recording; }
-      virtual const cRecordingInfo* RecInfo() const { return m_recording->Info(); }
+      XXH128_hash_t IdHash() const { return m_hash; }
 
 // To display the recording on the UI
-      virtual const int IsArchived() const { return m_isArchived; }
-      virtual const std::string ArchiveDescr() const { return RecordingsManager::GetArchiveDescr(m_recording) ; }
-      virtual const char *NewR() const { return LiveSetup().GetMarkNewRec() && Recording()->IsNew() ? "_new" : "" ; }
-      virtual bool checkNew() const { return m_recording->IsNew(); }  // for recursive checks on dirs, here we don't check LiveSetup
-#if VDRVERSNUM >= 20505
-      virtual const int RecordingErrors() const { return RecInfo()->Errors(); }
-#else
-      virtual const int RecordingErrors() const { return -1; }
-#endif
-      virtual int NumberTsFiles() const {
-        if (m_number_ts_files == -2) m_number_ts_files = GetNumberOfTsFiles(m_recording);
+      int IsArchived() const { return m_isArchived; }
+      bool checkNew() const { return m_checkNew; }
+      const char *NewR() const { return LiveSetup().GetMarkNewRec() && checkNew() ? "_new" : "" ; }
+      int RecordingErrors() const { return m_recordingErrors; }
+      int NumberTsFiles() const {
+        if (m_number_ts_files == -2) m_number_ts_files = GetNumberOfTsFiles(m_idI);
         return m_number_ts_files;
       }
-      virtual void getScraperData(std::string *collectionName = NULL);
       bool scraperDataAvailable() const { return m_s_videoType == tMovie || m_s_videoType == tSeries; }
       int scraperScannedRecording() const { return m_s_scanned_recording; }
       tvType scraperVideoType() const { return m_s_videoType; }
       int scraperCollectionId() const { return m_s_collection_id; }
       int scraperEpisodeNumber() const { return m_s_episode_number; }
       int scraperSeasonNumber() const { return m_s_season_number; }
-      const cSv scraperName() const { return m_s_title; }
-      const cSv scraperReleaseDate() const { return m_s_release_date; }
-      const cTvMedia &scraperImage() const;
+      cSv scraperName() const { return m_s_title; }
+      cSv scraperReleaseDate() const { return m_s_release_date; }
       int language() const { return m_language; }
+      int SD_HD() const { return m_video_SD_HD; }
+      double FramesPerSecond(void) const { return m_framesPerSecond; }
+      uint16_t FrameWidth(void) const { return m_frameWidth; }
+      uint16_t FrameHeight(void) const { return m_frameHeight; }
+#if VDRVERSNUM >= 20605
+      eScanType ScanType(void) const { return m_scanType; }
+      char ScanTypeChar(void) const { return ScanTypeChars[m_scanType]; }
+      eAspectRatio AspectRatio(void) const { return m_aspectRatio; }
+#endif
+
+      int CompareStD(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
+      bool matchesFilter(cSv filter) const;
+    private:
+      void getScraperData(const cRecording *recording);
+      int get_SD_HD(const cRecordingInfo *info);
+      const cTvMedia &scraperImage() const;
       int CompareL(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
       int CompareTexts(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
       int CompareT(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
-      int CompareStD(const RecordingsItemRecPtr &second, int *numEqualChars=NULL) const;
       bool orderDuplicates(const RecordingsItemRecPtr &second) const;
       bool orderDuplicates(const RecordingsItemRecPtr &second, bool alwaysShortText, bool lang = false) const;
-// To display the recording on the UI
-      bool matchesFilter(cSv filter) const;
-
-      virtual int SD_HD() const;
+    public:
       virtual void AppendAsJSArray(cToSvConcat<0> &target) const;
       static void AppendAsJSArray(cToSvConcat<0> &target, std::vector<RecordingsItemRecPtr>::const_iterator recIterFirst, std::vector<RecordingsItemRecPtr>::const_iterator recIterLast, bool &first, cSv filter, bool reverse);
 
@@ -376,13 +359,11 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
     protected:
       const std::string m_name;
       std::string GetNameForSearch(cSv name);
-      mutable std::string m_name_for_search;
-      const std::string m_folder;
+      std::string m_name_for_search;
+      const cString m_folder;
       std::string GetFolderForSearch(cSv folder);
       const std::string m_folder_for_search;
-      mutable std::string m_short_text;
       const int m_idI = -1;
-      const cRecording *m_recording = nullptr;
       const XXH128_hash_t m_hash;
       const int m_isArchived = 0;
       mutable int m_number_ts_files = -2;
@@ -390,10 +371,10 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       bool m_s_scanned_recording = false;
       tvType m_s_videoType = tNone;
       int m_s_dbid = 0;
-      std::string m_s_title = "";
-      std::string m_s_episode_name = "";
-      std::string m_s_IMDB_ID = "";
-      std::string m_s_release_date = "";
+      std::string m_s_title;
+      std::string m_s_episode_name;
+      std::string m_s_IMDB_ID;
+      std::string m_s_release_date;
       mutable cTvMedia m_s_image;
       mutable bool m_s_image_requested = false;
       cImageLevels m_imageLevels;
@@ -402,9 +383,28 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       int m_s_episode_number = 0;
       int m_s_season_number = 0;
       int m_language = 0;
-      mutable int m_video_SD_HD = -2;  // < -2: not checked. -1: Radio. 0 is SD, 1 is HD, >1 is UHD or better
+      int m_video_SD_HD = -2;  // < -2: not checked. -1: Radio. 0 is SD, 1 is HD, >1 is UHD or better
 
       int m_duration_deviation = 0;
+// to remove m_recording
+      std::string m_title;
+      std::string m_shortText;
+      std::string m_description;
+      std::string m_channelName;
+      std::string m_fileName;
+      int m_fileSizeMB = -1;
+      time_t m_startTime = 0;
+      int m_duration = -1;
+      bool m_checkNew = false;
+      int m_recordingErrors = 0;
+      double m_framesPerSecond = 0.;
+      uint16_t m_frameWidth = 0;
+      uint16_t m_frameHeight = 0;
+#if VDRVERSNUM >= 20605
+      eScanType m_scanType = stUnknown;
+      eAspectRatio m_aspectRatio = arUnknown;
+#endif
+
     protected:
       RecordingsItemRec(cSv name):
         m_name(name),
@@ -417,33 +417,9 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
    */
   class RecordingsItemDummy: public RecordingsItemRec
   {
+    friend class RecordingsItemPtrCompare;
     public:
       RecordingsItemDummy(const cEvent *event, cScraperVideo *scraperVideo);
-
-      virtual time_t StartTime() const { return m_event->StartTime(); }
-      virtual int Duration() const { return m_event->Duration() / 60; } // duration in minutes
-      virtual const char * Title() const { return m_event->Title(); }
-      virtual const char * ShortText() const { return m_event->ShortText(); }
-      virtual const char * Description() const { return m_event->Description(); }
-      virtual int DurationDeviation() const { return -2; }
-      virtual int FileSizeMB() const { return -1; }
-
-      virtual const cRecording* Recording() const { return nullptr; }
-      virtual const cRecordingInfo* RecInfo() const { return nullptr; }
-
-      virtual bool checkNew() const { return false; }
-      virtual const int IsArchived() const { return 0 ; }
-      virtual const std::string ArchiveDescr() const { return std::string(); }
-      virtual const char *NewR() const { return ""; }
-      virtual const int RecordingErrors() const { return -1; }
-      virtual int NumberTsFiles() const { return 0 ; }
-      virtual void getScraperData(std::string *collectionName = NULL) {}
-      const cTvMedia &scraperImage() const { return m_s_image; }
-
-      virtual int SD_HD() const { return 0; }
-      virtual void AppendAsJSArray(cToSvConcat<0> &target) const {}
-    private:
-      const cEvent *m_event;
   };
 
   /**
@@ -455,10 +431,10 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
     friend class RecordingsManager;
 
     private:
-      RecordingsTree(RecordingsManagerPtr recManPtr);
+      RecordingsTree();
 
     public:
-      virtual ~RecordingsTree();
+      ~RecordingsTree();
 
       RecordingsItemDirPtr getRoot() const { return m_root; }
       std::vector<std::string> getAllDirs() { std::vector<std::string> result; m_rootFileSystem->addDirList(result, ""); return result; }
@@ -480,35 +456,6 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const cRecording *re
       time_t m_creation_timestamp = 0;
   };
 
-
-  /**
-   *  A smart pointer to a recordings tree. As long as an instance of this
-   *  exists the recordings are locked in the VDR.
-   */
-  class RecordingsTreePtr : public std::shared_ptr<RecordingsTree>
-  {
-          friend class RecordingsManager;
-
-          private:
-                  RecordingsTreePtr(RecordingsManagerPtr recManPtr, std::shared_ptr<RecordingsTree> recTree);
-
-          public:
-                  RecordingsTreePtr();
-                  virtual ~RecordingsTreePtr();
-
-          private:
-                  RecordingsManagerPtr m_recManPtr;
-  };
-
-  /**
-   *  return singleton instance of RecordingsManager as a shared Pointer.
-   *  This ensures that after last use of the RecordingsManager it is
-   *  deleted. After deletion of the original RecordingsManager a repeated
-   *  call to this function creates a new RecordingsManager which is again
-   *  kept alive as long references to it exist.
-   */
-  RecordingsManagerPtr LiveRecordingsManager();
-
   inline void print(const char *t, const RecordingsItemDirPtr &a) {
     std::cout << t << (a ? a->Name() : "nullptr");
   }
@@ -527,6 +474,23 @@ void addDuplicateRecordingsNoSd(std::vector<RecordingsItemRecPtr> &DuplicateRecI
 void addDuplicateRecordingsLang(std::vector<RecordingsItemRecPtr> &DuplicateRecItems, RecordingsTreePtr &RecordingsTree);
 void addDuplicateRecordingsSd(std::vector<RecordingsItemRecPtr> &DuplicateRecItems, RecordingsTreePtr &RecordingsTree);
 
+template<std::size_t N>
+cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const RecordingsItemRec *itemRec) {
+#if VDRVERSNUM >= 20605
+  if (!itemRec) return s;
+  if (itemRec->FrameWidth() && itemRec->FrameHeight() ) {
+    s << itemRec->FrameWidth() << 'x' << itemRec->FrameHeight();
+    if (itemRec->FramesPerSecond() > 0) {
+      s.appendFormated("/%.2g", itemRec->FramesPerSecond() );
+      if (itemRec->ScanType() != stUnknown)
+        s.append(1, itemRec->ScanTypeChar());
+     }
+     if (itemRec->AspectRatio() != arUnknown)
+       s << ' ' << AspectRatioTexts[itemRec->AspectRatio()];
+  }
+#endif
+  return s;
+}
 } // namespace vdrlive
 
 #endif // VDR_LIVE_RECORDINGS_H

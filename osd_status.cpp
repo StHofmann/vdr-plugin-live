@@ -33,8 +33,14 @@ void OsdStatusMonitor::OsdTitle(const char *Title) {
   m_lastUpdate= clock();
 }
 
+#if defined(OSDMESSAGE)
+void OsdStatusMonitor::OsdStatusMessage2(const char *Message, eMessageType Type) {
+  cOsdStatusMonitorLock lw(true);
+  m_message_type = Type;
+#else
 void OsdStatusMonitor::OsdStatusMessage(const char *Message) {
   cOsdStatusMonitorLock lw(true);
+#endif
   m_message = Message ? Message : "";
   m_lastUpdate= clock();
 }
@@ -49,6 +55,7 @@ void OsdStatusMonitor::OsdHelpKeys(const char *Red, const char *Green, const cha
 }
 
 void cLiveOsdItem::Update(const char* Text) {
+// do not lock here: this is called by other methods having already the lock
   if (Text) {
     if (m_text != Text) m_text = Text;
   } else {
@@ -60,7 +67,7 @@ void cLiveOsdItem::Update(const char* Text) {
   virtual void OsdItem(const char *Text, int Index) {}
     // The OSD displays the given single line Text as menu item at Index.
 */
-#if defined(OSDITEM) && OSDITEM == 2
+#if VDRVERSNUM >= 20704 || (defined(OSDITEM) && OSDITEM == 2)
 void OsdStatusMonitor::OsdItem2(const char *Text, int Index, bool Selectable) {
   cOsdStatusMonitorLock lw(true);
   m_items.emplace_back(Text,Selectable);
@@ -72,6 +79,19 @@ void OsdStatusMonitor::OsdItem(const char *Text, int Index) {
   m_lastUpdate= clock();
 }
 
+#if defined(OSDSELECTED_3)
+void OsdStatusMonitor::OsdCurrentItem2(const char *Text, int Index) {
+  cOsdStatusMonitorLock lw(true);
+  if (Index >= 0) m_selected = Index;
+  if (Text) {
+    if (m_selected < 0)
+      esyslog("live: ERROR, OsdStatusMonitor::OsdItemChanged2, m_selected < 0, Text = %s", Text);
+    else
+      m_items[m_selected].Update(Text);
+  }
+  m_lastUpdate= clock();
+}
+#else
 bool OsdStatusMonitor::Select_if_matches(std::vector<cLiveOsdItem>::size_type line, const char *Text) {
 // if matches, select line and return true
 // otherwise, return false
@@ -130,6 +150,7 @@ void OsdStatusMonitor::OsdCurrentItem(const char *Text) {
 //  esyslog("live, OsdStatusMonitor::OsdCurrentItem, Text = \"%s\", current text: \"%.*s\"", Text, (int)m_items[m_selected].Text().length(), m_items[m_selected].Text().data() );
   }
 }
+#endif
 
 /* documentation in VDR source:
   virtual void OsdTextItem(const char *Text, bool Scroll) {}

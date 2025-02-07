@@ -14,8 +14,6 @@ VERSION := $(shell awk '/$(HASH)define LIVEVERSION/ { print $$3 }' setup.h | sed
 
 PKG_CONFIG ?= pkg-config
 
-### Check for libpcre2
-HAVE_PCRE2 := $(shell if $(PKG_CONFIG) --exists libpcre2-8; then echo "1"; else echo "0"; fi )
 
 ### The directory environment:
 # Use package data if installed...otherwise assume we're under the VDR source directory:
@@ -61,11 +59,6 @@ CXXTOOLVER := $(shell cxxtools-config --version | sed -e's/\.//g' | sed -e's/pre
 
 ### Optional configuration features
 PLUGINFEATURES :=
-ifeq ($(HAVE_PCRE2),1)
-	PLUGINFEATURES += -DHAVE_PCRE2
-	CXXFLAGS       += $(shell $(PKG_CONFIG) --cflags libpcre2-8)
-	LIBS           += $(shell $(PKG_CONFIG) --libs   libpcre2-8)
-endif
 
 # -Wno-deprecated-declarations .. get rid of warning: ‘template<class> class std::auto_ptr’ is deprecated
 CXXFLAGS += -std=c++17 -Wfatal-errors -Wundef -Wno-deprecated-declarations
@@ -92,10 +85,10 @@ DEFINES	+= -DDISABLE_TEMPLATES_COLLIDING_WITH_STL
 VERSIONSUFFIX = gen_version_suffix.h
 
 ### The object files (add further files here):
-PLUGINOBJS := $(PLUGIN).o thread.o tntconfig.o setup.o i18n.o timers.o \
-              tools.o recman.o tasks.o status.o epg_events.o epgsearch.o \
-              grab.o md5.o filecache.o livefeatures.o preload.o timerconflict.o \
-              users.o osd_status.o ffmpeg.o StringMatch.o xxhash.o
+PLUGINOBJS := $(PLUGIN).o recman.o epg_events.o thread.o tntconfig.o setup.o \
+              timers.o tools.o status.o epgsearch.o \
+              md5.o filecache.o livefeatures.o preload.o timerconflict.o \
+              users.o osd_status.o ffmpeg.o xxhash.o i18n.o
 PLUGINSRCS := $(patsubst %.o,%.cpp,$(PLUGINOBJS))
 
 WEB_LIB_PAGES := libpages.a

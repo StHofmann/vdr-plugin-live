@@ -138,7 +138,7 @@ Thanks to all users @vdr-portal.de for feedback, tests, bug reports, ...
 Summary of changes to Version 3.2:
 
 - Whats on:
--   Display sender logos. Code contributed by rüsseltier@vdr-portal.de
+-   Display channel logos. Code contributed by rüsseltier@vdr-portal.de
 
 - Multischedule:
 -   Remove restriction regarding max. number of channels on one page.
@@ -178,3 +178,23 @@ Summary of changes to Version 3.2:
 -   Remove ShowPlayMediaplayer from setup
 -   Many bug fixes, usability and UI improvements, performance improvements, code cleanup, ...
     Special thanks to SHofmann@vdr-portal.de for his contributions
+
+
+2025-  -  : Version 3.4.1:
+- Fix: Parsing additional times used in multischedule and what's on
+- Fix: Crash in case of an empty entry in channelgroups. Thanks to SHofmann @vdr-portal.de for reporting
+- Fix: Ensure to have locks before any access to VDR objects like cEvent, cRecording, ...
+- Timers & Recordings: Remove locks defined in live, rely on VDRs locks only
+- Remove grab.h, grab.cpp, tasks.h, tasks.cpp
+-   note for grab.h: Snapshot picture has now less delay to picture on tv
+-                    Allow shorter Snapshot-Interval
+-   note for tasks.h:
+-     These tasks require VDR LOCKs. While it seems to be a good idea to
+-     have these LOCKs in a separate thread, it is actually a bad one:
+-     As we wait for these tasks to finish, this can result in invalid LOCK
+-     sequences not detected by VDR but resulting in deadlocks.
+-     affected: Switch channel, remove timer, remove recording,
+        (play, pause, stop, forward, backward) recording
+
+- remove PCRE2 dependency, use c++ std::regex / std::regex_match
+- Hide empty directories in recordings on search (thanks to maazl for the patch)
