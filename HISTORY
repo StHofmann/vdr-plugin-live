@@ -211,3 +211,5 @@ Summary of changes to Version 3.2:
 
 - support SVG channel logos. Thanks @dile for the request, and @SHofmann for the patch.
 - title short text and description can now also be changed for (old) pes recordings
+
+- substantial rework of GUI and style sheets

@@ -55,28 +55,29 @@ function addScraperImageTitle(s, image, pt, title, seasonEpisode, runtime, date)
     s.a += image
     s.a += '\" class=\"thumb'
     s.a += pt
-  } else s.a += 'img/transparent.png\" height=\"16px'
+  } else s.a += 'img/transparent.png\" style=\"height: var(--icon-height, 16px)'
   if (title.length != 0 || date.length != 0) {
 // scraper data available
-    s.a += '\" title=\"'
+    s.a += '\" title=\"<p>'
     s.a += title
-      if (seasonEpisode.length != 0) {
-        s.a += '<br/>'
+    if (seasonEpisode.length != 0) {
+      s.a += '</p><p>'
         if (seasonEpisode.charAt(0) == '0') {
           s.a += seasonEpisode.slice(1);
         } else  {
           s.a += 'S'
           s.a += seasonEpisode
         }
-      }
-      if (runtime.length != 0) {
-        s.a += '<br/>'
-        s.a += runtime
-      }
-      if (date.length != 0) {
-        s.a += '<br/>'
-        s.a += date
-      }
+    }
+    if (runtime.length != 0) {
+      s.a += '</p><p>'
+      s.a += runtime
+    }
+    if (date.length != 0) {
+      s.a += '</p><p>'
+      s.a += date
+    }
+    s.a += '</p>'
   }
   s.a += '\"/></div>'
 }
@@ -100,7 +101,7 @@ function addTruncMedia(s, text, lims, liml) {
 
 function add2ndLine(s, shortText, description) {
 // second line (title / short text). Truncate, use description, ...
-  s.a += '<span class="short">'
+  s.a += '<div class="short">'
   var empty = true
   const parts = shortText.split(/<br\/?>/)
   if (parts[0].length > 0) {
@@ -116,20 +117,21 @@ function add2ndLine(s, shortText, description) {
     empty = false
   }
   if (empty) s.a += '&nbsp;'
-  s.a += '</span>'
 }
 
-// do not html encode title! will be html encoded here
-function addColEventRec(s, is_recording, times, eventprefix, eventid, title, folder, shortText, description) {
+// do not HTML-encode title; will be HTML-encoded here!
+function addColEventRec(s, still_recording, times, eventprefix, eventid, title, folder, shortText, description) {
 // col with times, channel, name, short text
   s.a += '<div class="withmargin'
-  s.a += is_recording
   s.a += '"><div class="margin-bottom display-xs"><span class="normal-font">'
   s.a += times
   s.a += '</span></div>'
 // sec&third line: Link to event, event title, short text
+  s.a += '<div class="'
+  s.a += still_recording
+  s.a += '">'
   addEventRec(s, eventprefix, eventid, '&history_num_back=1', title, folder, shortText, description)
-  s.a += '</div>'
+  s.a += '</div></div>'
 }
 
 function injectHdSdIcon(elementId, sdhd, channelName, frameParams) {
@@ -158,6 +160,11 @@ var imgDefer = document.getElementsByTagName('img');
   }
 }
 
+function clearRecordingsFilter(filter, currentSort, currentFlat) {
+// clear filter field
+  filter.value = "";
+  filterRecordings(filter, currentSort, currentFlat)
+}
 function clearCheckboxes(form) {
 // clearing checkboxes
   var inputs = form.getElementsByTagName('input');
@@ -279,7 +286,7 @@ function rec_string_d(rec_ids) {
 // events[day][1][ev][1][]: if available: existing recording data
 //
 function addEventList(s, col_span, events) {
-  s.a += '<table class="listing" cellspacing="0" cellpadding="0">'
+  s.a += '<table class="listing schedule" cellspacing="0" cellpadding="0">'
   for (let day=0; day < events.length; day++) {
     if (day != 0) {
       s.a += '<tr class="spacer"><td colspan='
@@ -288,9 +295,9 @@ function addEventList(s, col_span, events) {
     }
     s.a += '<tr class="head"><td colspan='
     s.a += col_span
-    s.a += '><div class="boxheader"><div><div>'
+    s.a += '><div class="boxheader"><div class="caption">'
     s.a += events[day][0]
-    s.a += '</div></div></div></td></tr>'
+    s.a += '</div></div></td></tr>'
     for (let event_=0; event_ < events[day][1].length; event_++) {
       if (events[day][1][event_].length == 1 && event_ == events[day][1].length-1) {
         addEvent(s, 1, events[day][1][event_][0])    // bottom

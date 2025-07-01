@@ -868,6 +868,9 @@ msgstr "žádné nahrávky"
 msgid "Delete selected"
 msgstr "Smazat automatické nahrávání?"
 
+msgid "No matching recordings found"
+msgstr ""
+
 msgid "Sort:"
 msgstr ""
 
@@ -887,6 +890,9 @@ msgid "Filter"
 msgstr ""
 
 msgid "Look in recordings titles and subtitles for the given string and display only the matching ones. You may also use perl compatible regular expressions (PCRE)."
+msgstr ""
+
+msgid "Clear filter"
 msgstr ""
 
 msgid "Expand all folders"
@@ -1115,6 +1121,9 @@ msgstr "Uživatelé"
 
 msgid "Delete user"
 msgstr "Smazat uživatele"
+
+msgid "No user configured"
+msgstr ""
 
 msgid "What's running on"
 msgstr "Co právě bězí v "

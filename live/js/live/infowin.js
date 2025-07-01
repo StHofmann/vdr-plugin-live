@@ -24,10 +24,13 @@ Note:
 
   The InfoWin class provides the following properties to fill the
   window with content:
-    - titleBox: the element meant to place the title of the window into.
-    - buttonBox: here the default window buttons are created. You might
-      clear this and create your own kind of window controls.
-    - winBody: this is where your window contents goes.
+
+    - titleBox:  The element containing the title of the window.
+    - buttonBox: The default window buttons are created here.
+    - winBody:   This is where the actual window contents goes.
+    - resizeBox: The element acting as anchor for the resize handle.
+                 If resize is supported by the browser, this element
+                 will remain invisible.
  */
 var InfoWin = new Class({
     options: {
@@ -40,18 +43,23 @@ var InfoWin = new Class({
       wm: false, // override default window manager.
       draggable: true,
       resizable: true,
-      buttonimg: 'transparent.png',
-      bodyselect: 'div.content',
-      titleselect: 'div.caption',
+      resizeImg: 'img/transparent.png',
+      closeImg: 'img/icon_overlay_cross.png',
+      pinImg: 'img/icon_overlay_pin.png',
+      pinnedImg: 'img/icon_overlay_pinned.png',
+      bodySelect: 'div.content',
+      titleSelect: 'div.caption',
       classSuffix: '-win',
       idSuffix: '-id',
-      offsets: {'x': -16, 'y': -16}
+      offsets: {'x': 0, 'y': 0}
     },
 
     initialize: function(id, options){
       this.setOptions(options);
       this.wm = this.options.wm || InfoWin.$wm;
-      this.winFrame = $(id + this.options.classSuffix + this.options.idSuffix);
+      winFrameId = id + this.options.classSuffix + this.options.idSuffix;
+      this.css = {'selector': 'div#' + winFrameId + ' '};
+      this.winFrame = $(winFrameId);
       if (!$defined(this.winFrame)){
         this.buildFrame(id);
         this.build(id);
@@ -70,54 +78,83 @@ var InfoWin = new Class({
       var top = new Element('div', {
           'class': this.options.className + this.options.classSuffix + '-top'
         }).inject(this.winFrame);
-      if (this.options.draggable) this.winFrame.makeDraggable({'handle': top});
-      top = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-c'
-        }).inject(top);
+      if (this.options.draggable) {
+        top.setStyle('cursor', 'grab');;
+        this.winFrame.makeDraggable({'handle': top, 'onComplete': function()
+          { // make sure the window is within the 'content' container;
+            // as the 'content' element uses scrolling, we do not need
+            // to check for overflow in scroll direction
+            if (this.element.offsetLeft < 0) {
+              this.element.style.left = '0px';
+            }
+            if (this.element.offsetTop < 0) {
+              this.element.style.top = '0px';
+            }
+          }
+        });
+      }
       this.titleBox = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-t'
+          'class': this.options.className + this.options.classSuffix + '-title'
         }).inject(top);
 
       this.buttonBox = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-b'
+          'class': this.options.className + this.options.classSuffix + '-buttons'
         }).inject(top);
-      var cls = new Element('div', {
-          'class': 'close'
+      this.pinButton = new Element('img', {
+          'src': this.options.pinImg,
+          'class': 'iconic button pin',
+          'alt': 'pin'
         }).inject(this.buttonBox);
-      cls.addEvent('click', function(event){
+      this.pinButton.addEvent('click', function(event){
+          var event = new Event(event);
+          winFrameRect = this.winFrame.getBoundingClientRect();
+          if (this.winFrame.style.position == 'fixed') {
+            // floating coordinates refer to the 'content' element
+            content = document.getElementById('content');
+            contentRect = content.getBoundingClientRect();
+            this.winFrame.style.position = "absolute";
+            this.winFrame.style.left = (winFrameRect.left - contentRect.left + content.scrollLeft) + 'px';
+            this.winFrame.style.top  = (winFrameRect.top  - contentRect.top  + content.scrollTop ) + 'px';
+            this.pinButton.src = this.options.pinImg;
+          } else {
+            // fixed coordinates refer to the viewport
+            this.winFrame.style.position = 'fixed';
+            this.winFrame.style.left = winFrameRect.left + 'px';
+            this.winFrame.style.top  = winFrameRect.top  + 'px';
+            this.pinButton.src = this.options.pinnedImg;
+          }
+          event.stop();
+          return false;
+        }.bind(this));
+      closeButton = new Element('img', {
+          'src': this.options.closeImg,
+          'class': 'iconic button close',
+          'alt': 'close'
+        }).inject(this.buttonBox);
+      closeButton.addEvent('click', function(event){
           var event = new Event(event);
           event.stop();
           return this.hide();
         }.bind(this));
-      cls = new Element('img', {
-          'src': this.options.buttonimg,
-          'alt': 'close',
-          'width': '16px',
-          'height': '16px'
-        }).inject(cls);
 
       // body of window: user content.
-      var bdy = new Element('div', {
+      this.winBody = new Element('div', {
           'class': this.options.className + this.options.classSuffix + '-body'
         }).inject(this.winFrame);
-      bdy = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-c'
-        }).inject(bdy);
-      this.winBody = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-s'
-        }).inject(bdy);
 
-      // bottom border of window: lower shadows and corners, optional
-      // resize handle.
-      var bot = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-bot'
-        }).inject(this.winFrame);
-      bot = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-c'
-        }).inject(bot);
-
+      // by default, we rely on the CSS 'resize' property to for resizing;
+      // if unsupported, and as fall-back approach, we inject a distinct
+      // resize element for the resize handle of the mootools.
       if (this.options.resizable) {
-        this.winFrame.makeResizable({'handle': bot});
+        var resizeBox = new Element('div', {
+            'class': this.options.className + this.options.classSuffix + '-resize'
+          }).inject(this.winFrame);
+        var icon = new Element('img', {
+            'src': this.options.resizeImg,
+            'class': 'icon resize',
+            'alt': 'resize'
+          }).inject(resizeBox);
+        this.winFrame.makeResizable({'handle': resizeBox});
       }
 
       if (!this.fillTitle(id)) {
@@ -129,7 +166,7 @@ var InfoWin = new Class({
     buildFrame: function(id){
       this.winFrame = new Element('div', {
           'id': id + this.options.classSuffix + this.options.idSuffix,
-          'class': this.options.className + this.options.classSuffix,
+          'class': this.options.className + this.options.classSuffix + ' ' + id.replace(/^([A-Za-z]*)_.*$/, this.options.className + '-$1'),
           'styles': {
             'position': 'absolute',
             'top': '0',
@@ -139,9 +176,20 @@ var InfoWin = new Class({
     },
 
     show: function(event){
-      this.position(event);
-      this.fireEvent('onShow', [this.winFrame]);
+      // raise before determining the position, as we then have the true
+      // window dimensions derived from CSS settings for rectification
+      // (instead of just some magic constants)
       this.wm.raise(this);
+      this.position(event);
+      if (this.winFrame.style.position != 'fixed') {
+        // floating coordinates refer to the 'content' element
+        content = document.getElementById('content');
+        contentRect = content.getBoundingClientRect();
+        this.winFrame.style.position = "absolute";
+        this.winFrame.style.left = (parseInt(this.winFrame.style.left) - contentRect.left + content.scrollLeft) + 'px';
+        this.winFrame.style.top  = (parseInt(this.winFrame.style.top)  - contentRect.top  + content.scrollTop ) + 'px';
+      }
+      this.fireEvent('onShow', [this.winFrame]);
       if (this.options.timeout)
         this.timer = this.hide.delay(this.options.timeout, this);
       return false;
@@ -155,13 +203,22 @@ var InfoWin = new Class({
         this.destroyed = true;
       }
       else {
+        if (this.winFrame.style.position == 'fixed') {
+            // floating coordinates refer to the 'content' element
+            content = document.getElementById('content');
+            contentRect = content.getBoundingClientRect();
+            this.winFrame.style.position = "absolute";
+            this.winFrame.style.left = (winFrameRect.left - contentRect.left + content.scrollLeft) + 'px';
+            this.winFrame.style.top  = (winFrameRect.top  - contentRect.top  + content.scrollTop ) + 'px';
+            this.pinButton.src = this.options.pinImg;
+        }
         this.wm.bury(this);
       }
       return false;
     },
 
     fillBody: function(id){
-      var bodyElems = $$('#'+ id + ' ' + this.options.bodyselect);
+      var bodyElems = $$('#'+ id + ' ' + this.options.bodySelect);
       if ($defined(bodyElems) && bodyElems.length > 0) {
         this.winBody.empty();
         this.fireEvent('onDomExtend', [id, bodyElems]);
@@ -204,7 +261,7 @@ var InfoWin = new Class({
     },
 
     fillTitle: function(id){
-      var titleElems = $$('#' + id + ' ' + this.options.titleselect);
+      var titleElems = $$('#' + id + ' ' + this.options.titleSelect);
       if ($defined(titleElems) && titleElems.length > 0) {
         this.titleBox.empty().adopt(titleElems);
         return true;
@@ -215,9 +272,13 @@ var InfoWin = new Class({
     position: function(event){
       var prop = {'x': 'left', 'y': 'top'};
       var pos = event.page['y'] + this.options.offsets['y'];
+      content = document.getElementById('content');
+      contentRect = content.getBoundingClientRect();
+      if (pos < contentRect.y) pos = contentRect.y;
       this.winFrame.setStyle(prop['y'], pos);
       pos = event.page['x'] + this.options.offsets['x'];
-      if (pos > window.innerWidth - 550) pos = window.innerWidth - 550;
+      var width = this.winFrame.getBoundingClientRect().width;
+      if (pos > window.innerWidth - width) pos = window.innerWidth - width;
       if (pos < 1) pos = 1;
       this.winFrame.setStyle(prop['x'], pos);
     }
@@ -255,7 +316,7 @@ InfoWin.Manager = new Class({
                   'display' : (kind == 'closed') ? 'none' : 'block'
                 }
               });
-            this[wins].inject(document.body);
+            this[wins].inject(document.getElementById('content') || document.body);
           }
         }, this);
     },
@@ -381,33 +442,10 @@ InfoWin.Notifier = InfoWin.extend({
     },
 
     build: function(id){
-      /* top border of hint */
-      var top = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-top'
-        }).inject(this.winFrame);
-      top = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-c'
-        }).inject(top);
-
       /* body of tip: some helper divs and content */
-      var bdy = new Element('div', {
+      this.winBody = new Element('div', {
           'class': this.options.className + this.options.classSuffix + '-body'
         }).inject(this.winFrame);
-      bdy = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-c'
-        }).inject(bdy);
-      this.winBody = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-s'
-        }).inject(bdy);
-
-      /* bottom border of tip */
-      var bot = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-bot'
-        }).inject(this.winFrame);
-      bot = new Element('div', {
-          'class': this.options.className + this.options.classSuffix + '-c'
-        }).inject(bot);
-
       return this.fillBody(id);
     },
 
@@ -425,4 +463,3 @@ InfoWin.Notifier = InfoWin.extend({
       }
     }
   });
-

@@ -858,6 +858,9 @@ msgstr "Записи не найдены"
 msgid "Delete selected"
 msgstr "Удалить выбранные"
 
+msgid "No matching recordings found"
+msgstr ""
+
 msgid "Sort:"
 msgstr ""
 
@@ -878,6 +881,9 @@ msgstr "Фильтр"
 
 msgid "Look in recordings titles and subtitles for the given string and display only the matching ones. You may also use perl compatible regular expressions (PCRE)."
 msgstr "Искать только в названиях записей и субтитров в данной строке и отобразить совпадающие. Также вы можете использовать perl совместимые стандартные команды (PCRE)."
+
+msgid "Clear filter"
+msgstr ""
 
 msgid "Expand all folders"
 msgstr "Развернуть все папки"
@@ -1102,6 +1108,9 @@ msgstr "Пользователь"
 
 msgid "Delete user"
 msgstr "Удалить пользователя"
+
+msgid "No user configured"
+msgstr ""
 
 msgid "What's running on"
 msgstr "Что идет сейчас?"

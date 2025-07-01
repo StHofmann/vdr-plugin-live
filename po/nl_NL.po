@@ -875,6 +875,9 @@ msgstr ""
 msgid "Delete selected"
 msgstr ""
 
+msgid "No matching recordings found"
+msgstr ""
+
 msgid "Sort:"
 msgstr ""
 
@@ -894,6 +897,9 @@ msgid "Filter"
 msgstr ""
 
 msgid "Look in recordings titles and subtitles for the given string and display only the matching ones. You may also use perl compatible regular expressions (PCRE)."
+msgstr ""
+
+msgid "Clear filter"
 msgstr ""
 
 msgid "Expand all folders"
@@ -1125,6 +1131,9 @@ msgstr ""
 #, fuzzy
 msgid "Delete user"
 msgstr "Serie's opnemen"
+
+msgid "No user configured"
+msgstr ""
 
 msgid "What's running on"
 msgstr ""

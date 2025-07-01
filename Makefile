@@ -10,23 +10,22 @@ PLUGIN := live
 ### The version number of this plugin (taken from the main source file):
 HASH := \#
 ifeq ($(VERSION),)
-VERSION := $(shell awk '/$(HASH)define LIVEVERSION/ { print $$3 }' setup.h | sed -e 's/[";]//g')
+  VERSION := $(shell awk '/$(HASH)define LIVEVERSION/ { print $$3 }' setup.h | sed -e 's/[";]//g')
 endif
 
 # figure out VERSION_SUFFIX
 ifeq ($(VERSION_SUFFIX),)
-ifneq ($(shell which git),)
-  ifeq ($(shell test -d .git || echo void),)
-    VERS_B := $(shell git branch | grep '^*' | sed -e's/^* //')
-    VERS_H := $(shell git show --pretty=format:"%h_%ci" HEAD | head -1 | tr -d ' \-:')
-    VERS_P := $(shell git status -uno --porcelain | grep -qc . && echo "_patched")
-    VERSION_SUFFIX += _git_$(VERS_B)_$(VERS_H)$(VERS_P)
+  ifneq ($(shell which git),)
+    ifeq ($(shell test -d .git || echo void),)
+      VERS_B := $(shell git branch | grep '^*' | sed -e's/^* //')
+      VERS_H := $(shell git show --pretty=format:"%h_%ci" HEAD | head -1 | tr -d ' \-:')
+      VERS_P := $(shell git status -uno --porcelain | grep -qc . && echo "_patched")
+      VERSION_SUFFIX += _git_$(VERS_B)_$(VERS_H)$(VERS_P)
+    endif
   endif
-endif
-
-ifneq ($(shell which quilt),)
-  ifeq ($(shell quilt applied 2>&1 > /dev/null; echo $$?),0)
-    VERSION_SUFFIX += _quilt_$(shell quilt applied | tr  '\n' '_')
+  ifneq ($(shell which quilt),)
+    ifeq ($(shell quilt applied 2>&1 > /dev/null; echo $$?),0)
+      VERSION_SUFFIX += _quilt_$(shell quilt applied | tr  '\n' '_')
     endif
   endif
 endif
@@ -225,6 +224,7 @@ $(SOINST): $(SOFILE)
 version_suffix:
 	@echo "VERSION is $(VERSION)"
 	@echo "VERSION_SUFFIX = \"$(VERSION_SUFFIX)\""
+
 .PHONY: install-lib
 install-lib: version_suffix lib recursive-soinst
 

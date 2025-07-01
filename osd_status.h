@@ -77,34 +77,36 @@ template <size_t N> cToSvConcat<N>& appendMessageHtml(cToSvConcat<N>& target) {
     if (m_message.empty() ) return target;
 #if VDRVERSNUM >= 20704
     switch (m_message_type) {
+      // class 'osdMessage' establishes common settings and a flexbox for centering;
+      // subordinate 'div' just provides background and color
       case mtStatus:
-        target << "<div class=\"osdMessageStatus\">";
+        target << "<div class=\"osdMessage osdMessageStatus\"><div>";
         break;
       case mtInfo:
-        target << "<div class=\"osdMessageInfo\">";
+        target << "<div class=\"osdMessage osdMessageInfo\"><div>";
         break;
       case mtWarning:
-        target << "<div class=\"osdMessageWarning\">";
+        target << "<div class=\"osdMessage osdMessageWarning\"><div>";
         break;
       case mtError:
-        target << "<div class=\"osdMessageError\">";
+        target << "<div class=\"osdMessage osdMessageError\"><div>";
         break;
       default:
-        target << "<div class=\"osdMessage\">";
+        target << "<div class=\"osdMessage\"><div>";
     }
 #else
-    target << "<div class=\"osdMessage\">";
+    target << "<div class=\"osdMessage\"><div>";
 #endif
     AppendHtmlEscapedAndCorrectNonUTF8(target, m_message);
-    target << "</div>";
+    target << "</div></div>";
     return target;
   }
 template <size_t N> cToSvConcat<N>& appendRedHtml(cToSvConcat<N>& target) {
     cOsdStatusMonitorLock lr;
     if (m_red.empty() ) {
-      target << "<div class=\"osdButtonInvisible\"></div>";
+      target << "<div class=\"osdButton osdButtonInvisible\"></div>";
     } else {
-      target << "<div class=\"osdButtonRed\">";
+      target << "<div class=\"osdButton osdButtonRed\">";
       AppendHtmlEscapedAndCorrectNonUTF8(target, m_red);
       target << "</div>";
     }
@@ -113,9 +115,9 @@ template <size_t N> cToSvConcat<N>& appendRedHtml(cToSvConcat<N>& target) {
 template <size_t N> cToSvConcat<N>& appendGreenHtml(cToSvConcat<N>& target) {
     cOsdStatusMonitorLock lr;
     if (m_green.empty() ) {
-      target << "<div class=\"osdButtonInvisible\"></div>";
+      target << "<div class=\"osdButton osdButtonInvisible\"></div>";
     } else {
-      target << "<div class=\"osdButtonGreen\">";
+      target << "<div class=\"osdButton osdButtonGreen\">";
       AppendHtmlEscapedAndCorrectNonUTF8(target, m_green);
       target << "</div>";
     }
@@ -124,9 +126,9 @@ template <size_t N> cToSvConcat<N>& appendGreenHtml(cToSvConcat<N>& target) {
 template <size_t N> cToSvConcat<N>& appendYellowHtml(cToSvConcat<N>& target) {
     cOsdStatusMonitorLock lr;
     if (m_yellow.empty() ) {
-      target << "<div class=\"osdButtonInvisible\"></div>";
+      target << "<div class=\"osdButton osdButtonInvisible\"></div>";
     } else {
-      target << "<div class=\"osdButtonYellow\">";
+      target << "<div class=\"osdButton osdButtonYellow\">";
       AppendHtmlEscapedAndCorrectNonUTF8(target, m_yellow);
       target << "</div>";
     }
@@ -134,10 +136,14 @@ template <size_t N> cToSvConcat<N>& appendYellowHtml(cToSvConcat<N>& target) {
   }
 template <size_t N> cToSvConcat<N>& appendBlueHtml(cToSvConcat<N>& target) {
     cOsdStatusMonitorLock lr;
-    if (m_blue.empty() ) return target;
-    target << "<div class=\"osdButtonBlue\">";
-    AppendHtmlEscapedAndCorrectNonUTF8(target, m_blue);
-    target << "</div>";
+    if (m_blue.empty() ) {
+      // create even invisible last button for proper flexbox space balancing
+      target << "<div class=\"osdButton osdButtonInvisible\"></div>";
+    } else {
+      target << "<div class=\"osdButton osdButtonBlue\">";
+      AppendHtmlEscapedAndCorrectNonUTF8(target, m_blue);
+      target << "</div>";
+    }
     return target;
   }
 template <size_t N> cToSvConcat<N>& appendButtonsHtml(cToSvConcat<N>& target) {

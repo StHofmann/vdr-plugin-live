@@ -858,6 +858,9 @@ msgstr "No se han encontrado grabaciones"
 msgid "Delete selected"
 msgstr "Borrar selección"
 
+msgid "No matching recordings found"
+msgstr ""
+
 msgid "Sort:"
 msgstr ""
 
@@ -878,6 +881,9 @@ msgstr "Filtrar"
 
 msgid "Look in recordings titles and subtitles for the given string and display only the matching ones. You may also use perl compatible regular expressions (PCRE)."
 msgstr "Buscar en grabaciones títulos y subtítulos la cadena indicada y mostrar únicamente las que coincidan. Puede también usar expresiones regulares tipo perl (PCRE)."
+
+msgid "Clear filter"
+msgstr ""
 
 msgid "Expand all folders"
 msgstr ""
@@ -1102,6 +1108,9 @@ msgstr "Usuarios"
 
 msgid "Delete user"
 msgstr "Borrar usuario"
+
+msgid "No user configured"
+msgstr ""
 
 msgid "What's running on"
 msgstr "¿Qué se está reproduciendo?"

@@ -861,6 +861,9 @@ msgstr "ჩანაწერების გარეშე"
 msgid "Delete selected"
 msgstr "მონიშნულის წაშლა"
 
+msgid "No matching recordings found"
+msgstr ""
+
 msgid "Sort:"
 msgstr "დალაგება:"
 
@@ -881,6 +884,9 @@ msgstr "ფილტრი"
 
 msgid "Look in recordings titles and subtitles for the given string and display only the matching ones. You may also use perl compatible regular expressions (PCRE)."
 msgstr "სანამ სტრიქონის ზუსტ დამთხვევას ჩართავდეთ, ჩანაწერების სახელები და სუბტიტრები გადაამოწმეთ. ასევე შეგიძლიათ გამოიყენოთ Perl-თან თავსებადი რეგულარული გამოსახულებები (PCRE)."
+
+msgid "Clear filter"
+msgstr ""
 
 msgid "Expand all folders"
 msgstr "ყველა საქაღალდის ამოკეცვა"
@@ -1105,6 +1111,9 @@ msgstr "მომხმარებლები"
 
 msgid "Delete user"
 msgstr "მომხმარებლის წაშლა"
+
+msgid "No user configured"
+msgstr ""
 
 msgid "What's running on"
 msgstr "რა არის გაშვებული"
