@@ -453,7 +453,7 @@ std::string appendEpgItemWithRecItem(cToSvConcat<0> &epg_item, cSv lastDay, cons
     epg_item.concat("[\"", day, "\",[");
   } else
     epg_item.concat(',');
-  RecordingsItemRecPtr recItem;
+  RecordingsItemRec *recItem;
   epg_item.concat('[');
   if (appendEpgItem(epg_item, recItem, Event, Channel, withChannel, Timers)) {
     epg_item.concat(",[");
@@ -464,16 +464,16 @@ std::string appendEpgItemWithRecItem(cToSvConcat<0> &epg_item, cSv lastDay, cons
   return std::string(day);
 }
 
-bool appendEpgItem(cToSvConcat<0> &epg_item, RecordingsItemRecPtr &recItem, const cEvent *Event, const cChannel *Channel, bool withChannel, const cTimers *Timers) {
+bool appendEpgItem(cToSvConcat<0> &epg_item, RecordingsItemRec *&recItem, const cEvent *Event, const cChannel *Channel, bool withChannel, const cTimers *Timers) {
   cGetScraperVideo getScraperVideo(Event, nullptr);
   getScraperVideo.call(LiveSetup().GetPluginTvscraper());
 
   RecordingsTreePtr recordingsTree(RecordingsManager::GetRecordingsTree());
-  const std::vector<RecordingsItemRecPtr> *recItems = recordingsTree->allRecordings(eSortOrder::duplicatesLanguage);
+  const std::vector<RecordingsItemRec *> *recItems = recordingsTree->allRecordings(RecordingsManager::eSortOrder::duplicatesLanguage);
   bool recItemFound = searchNameDesc(recItem, recItems, Event, getScraperVideo.m_scraperVideo.get());
   if (!recItemFound) {
-    const std::vector<RecordingsItemRecPtr> *recItems = recordingsTree->allRecordings(eSortOrder::title);
-    recItemFound = searchTitle(recItem, recItems, Event, getScraperVideo.m_scraperVideo.get() );
+    const std::vector<RecordingsItemRec *> *recItems = recordingsTree->allRecordings(RecordingsManager::eSortOrder::title);
+    recItemFound = searchTitle(recItem, recItems, Event, getScraperVideo.m_scraperVideo.get());
   }
 
   epg_item.append("[\"");

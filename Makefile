@@ -9,11 +9,29 @@ PLUGIN := live
 
 ### The version number of this plugin (taken from the main source file):
 HASH := \#
+ifeq ($(VERSION),)
 VERSION := $(shell awk '/$(HASH)define LIVEVERSION/ { print $$3 }' setup.h | sed -e 's/[";]//g')
-# $(info $$VERSION is [${VERSION}])
+endif
+
+# figure out VERSION_SUFFIX
+ifeq ($(VERSION_SUFFIX),)
+ifneq ($(shell which git),)
+  ifeq ($(shell test -d .git || echo void),)
+    VERS_B := $(shell git branch | grep '^*' | sed -e's/^* //')
+    VERS_H := $(shell git show --pretty=format:"%h_%ci" HEAD | head -1 | tr -d ' \-:')
+    VERS_P := $(shell git status -uno --porcelain | grep -qc . && echo "_patched")
+    VERSION_SUFFIX += _git_$(VERS_B)_$(VERS_H)$(VERS_P)
+  endif
+endif
+
+ifneq ($(shell which quilt),)
+  ifeq ($(shell quilt applied 2>&1 > /dev/null; echo $$?),0)
+    VERSION_SUFFIX += _quilt_$(shell quilt applied | tr  '\n' '_')
+    endif
+  endif
+endif
 
 PKG_CONFIG ?= pkg-config
-
 
 ### The directory environment:
 # Use package data if installed...otherwise assume we're under the VDR source directory:
@@ -82,7 +100,7 @@ SOINST := $(DESTDIR)$(LIBDIR)/$(SOFILE).$(APIVERSION)
 ### Includes and Defines (add further entries here):
 DEFINES	+= -D_GNU_SOURCE -DPLUGIN_NAME_I18N='"$(PLUGIN)"' -DTNTVERSION=$(TNTVERSION) -DCXXTOOLVER=$(CXXTOOLVER)
 DEFINES	+= -DDISABLE_TEMPLATES_COLLIDING_WITH_STL
-VERSIONSUFFIX = gen_version_suffix.h
+DEFINES	+= -DVERSION_SUFFIX='"$(VERSION_SUFFIX)"'
 
 ### The object files (add further files here):
 PLUGINOBJS := $(PLUGIN).o recman.o epg_events.o thread.o tntconfig.o setup.o \
@@ -100,7 +118,7 @@ SUBDIRS := $(WEB_DIR_PAGES)
 
 ### The main target:
 .PHONY: all
-all: lib i18n
+all: version_suffix lib i18n
 	@true
 
 ### Implicit rules:
@@ -124,7 +142,7 @@ endif
 ### For all recursive Targets:
 
 recursive-%:
-	@$(MAKE) --no-print-directory $*
+	@$(MAKE) --no-print-directory VERSION=$(VERSION) VERSION_SUFFIX=$(VERSION_SUFFIX) $*
 
 ### Internationalization (I18N):
 PODIR    := po
@@ -167,14 +185,9 @@ recursive-inst_I18Nmsg: recursive-I18Nmo
 i18n: subdirs recursive-I18Nmo
 
 .PHONY: install-i18n
-install-i18n: i18n recursive-inst_I18Nmsg
+install-i18n: version_suffix i18n recursive-inst_I18Nmsg
 
 ### Targets:
-
-$(VERSIONSUFFIX): FORCE
-ifneq ($(MAKECMDGOALS),clean)
-	@./buildutil/version-util $(VERSIONSUFFIX) || ./buildutil/version-util -F $(VERSIONSUFFIX)
-endif
 
 .PHONY: subdirs $(SUBDIRS)
 subdirs: $(SUBDIRS)
@@ -198,11 +211,8 @@ sofile: $(SOFILE)
 recursive-sofile: subdirs
 recursive-soinst: recursive-sofile
 
-# When building in parallel, this will tell make to build VERSIONSUFFIX as first
-subdirs $(PLUGINOBJS): $(VERSIONSUFFIX)
-
 .PHONY: lib
-lib: $(VERSIONSUFFIX) subdirs $(PLUGINOBJS) recursive-sofile
+lib: subdirs $(PLUGINOBJS) recursive-sofile
 
 .PHONY: soinst
 soinst: $(SOINST)
@@ -211,17 +221,21 @@ $(SOINST): $(SOFILE)
 	$(call PRETTY_PRINT,"IN" $<)
 	$(Q)install -D $< $@
 
+.PHONY: version_suffix
+version_suffix:
+	@echo "VERSION is $(VERSION)"
+	@echo "VERSION_SUFFIX = \"$(VERSION_SUFFIX)\""
 .PHONY: install-lib
-install-lib: lib recursive-soinst
+install-lib: version_suffix lib recursive-soinst
 
 .PHONY: install-web
-install-web:
+install-web: version_suffix
 	$(call PRETTY_PRINT,"IN web")
 	$(Q)mkdir -p $(CFGDIR)/plugins/$(PLUGIN)
 	$(Q)cp -au live/* $(CFGDIR)/plugins/$(PLUGIN)
 
 .PHONY: install-conf
-install-conf:
+install-conf: version_suffix
 	$(call PRETTY_PRINT,"IN conf")
 	$(Q)mkdir -p $(DESTDIR)$(CFGDIR)/plugins/$(PLUGIN)
 	$(Q)for i in conf/*; do\
@@ -248,7 +262,6 @@ clean: subdirs
 	$(call PRETTY_PRINT,"CLN top")
 	@-rm -f $(I18Nmo) $(I18Npot)
 	@-rm -f $(PLUGINOBJS) $(DEPFILE) *.so *.tgz core* *~
-	@-rm -f $(VERSIONSUFFIX)
 
 .PRECIOUS: $(I18Npo)
 

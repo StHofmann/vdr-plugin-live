@@ -53,10 +53,19 @@ msgid "TV shows"
 msgstr "Serien"
 
 msgid "Movie collections"
-msgstr "Filmsammlungen"
+msgstr "Filmreihen"
 
 msgid "File system view"
 msgstr "Dateisystem"
+
+msgid "Duplicates not identified by tvscraper"
+msgstr "Duplikate von Sendungen, die tvscraper nicht gefunden hat"
+
+msgid "Duplicates identified by tvscraper"
+msgstr "Duplikate von Sendungen, die tvscraper gefunden hat"
+
+msgid "Duplicates, with different languages"
+msgstr "Duplikate, aber in unterschiedlichen Sprachen"
 
 msgid "No recording errors"
 msgstr "Kein Fehler in der Aufzeichnung"
@@ -851,15 +860,6 @@ msgstr "Keine Aufzeichnungen vorhanden"
 msgid "Delete selected"
 msgstr "Markierte löschen"
 
-msgid "Duplicates identified by tvscraper"
-msgstr "Duplikate von Sendungen, die tvscraper gefunden hat"
-
-msgid "Duplicates, with different languages"
-msgstr "Duplikate, aber in unterschiedlichen Sprachen"
-
-msgid "Duplicates not identified by tvscraper"
-msgstr "Duplikate von Sendungen, die tvscraper nicht gefunden hat"
-
 msgid "Sort:"
 msgstr "Sortierung:"
 
@@ -1031,6 +1031,12 @@ msgstr "Ordner zur Ermittlung von Serien-Episoden"
 
 msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
 msgstr "Eine Aufzeichnung unterhalb eines solchen Ordners gilt als Teil einer Serie; Ordnernamen wie im Dateisystem kodieren und mehrere Ordner mit einem Semikolon (\";\") trennen"
+
+msgid "Show special folders in recordings"
+msgstr "Virtuelle Ordner in Aufzeichnungen einblenden"
+
+msgid "Landscape recording images"
+msgstr "Poster der Aufzeichnungen haben Querformat"
 
 msgid "Start page"
 msgstr "Startseite"

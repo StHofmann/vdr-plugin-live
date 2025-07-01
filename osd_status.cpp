@@ -33,8 +33,8 @@ void OsdStatusMonitor::OsdTitle(const char *Title) {
   m_lastUpdate= clock();
 }
 
-#if defined(OSDMESSAGE)
-void OsdStatusMonitor::OsdStatusMessage2(const char *Message, eMessageType Type) {
+#if VDRVERSNUM >= 20705
+void OsdStatusMonitor::OsdStatusMessage(eMessageType Type, const char *Message) {
   cOsdStatusMonitorLock lw(true);
   m_message_type = Type;
 #else
@@ -67,8 +67,8 @@ void cLiveOsdItem::Update(const char* Text) {
   virtual void OsdItem(const char *Text, int Index) {}
     // The OSD displays the given single line Text as menu item at Index.
 */
-#if VDRVERSNUM >= 20704 || (defined(OSDITEM) && OSDITEM == 2)
-void OsdStatusMonitor::OsdItem2(const char *Text, int Index, bool Selectable) {
+#if VDRVERSNUM >= 20705
+void OsdStatusMonitor::OsdItem(const char *Text, int Index, bool Selectable) {
   cOsdStatusMonitorLock lw(true);
   m_items.emplace_back(Text,Selectable);
 #else
@@ -79,13 +79,13 @@ void OsdStatusMonitor::OsdItem(const char *Text, int Index) {
   m_lastUpdate= clock();
 }
 
-#if defined(OSDSELECTED_3)
-void OsdStatusMonitor::OsdCurrentItem2(const char *Text, int Index) {
+#if VDRVERSNUM >= 20705
+void OsdStatusMonitor::OsdCurrentItem(const char *Text, int Index) {
   cOsdStatusMonitorLock lw(true);
   if (Index >= 0) m_selected = Index;
   if (Text) {
     if (m_selected < 0)
-      esyslog("live: ERROR, OsdStatusMonitor::OsdItemChanged2, m_selected < 0, Text = %s", Text);
+      esyslog("live: ERROR, OsdStatusMonitor::OsdItemChanged, m_selected < 0, Text = %s", Text);
     else
       m_items[m_selected].Update(Text);
   }

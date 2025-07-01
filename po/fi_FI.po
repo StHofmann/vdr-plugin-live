@@ -56,6 +56,15 @@ msgstr ""
 msgid "File system view"
 msgstr ""
 
+msgid "Duplicates not identified by tvscraper"
+msgstr ""
+
+msgid "Duplicates identified by tvscraper"
+msgstr ""
+
+msgid "Duplicates, with different languages"
+msgstr ""
+
 msgid "No recording errors"
 msgstr ""
 
@@ -849,15 +858,6 @@ msgstr "Tallenteita ei löydy"
 msgid "Delete selected"
 msgstr "Poista valitut"
 
-msgid "Duplicates identified by tvscraper"
-msgstr ""
-
-msgid "Duplicates, with different languages"
-msgstr ""
-
-msgid "Duplicates not identified by tvscraper"
-msgstr ""
-
 msgid "Sort:"
 msgstr ""
 
@@ -1028,6 +1028,12 @@ msgid "Folders for scraping series episodes"
 msgstr ""
 
 msgid "Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'"
+msgstr ""
+
+msgid "Show special folders in recordings"
+msgstr ""
+
+msgid "Landscape recording images"
 msgstr ""
 
 msgid "Start page"

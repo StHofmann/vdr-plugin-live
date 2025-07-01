@@ -12,8 +12,8 @@
 #include "stringhelpers.h"
 #include <vdr/menuitems.h>
 
-#define LIVEVERSION "3.4.1"
-#define LIVEVERSNUM 30401
+#define LIVEVERSION "3.5.0"
+#define LIVEVERSNUM 30500
 #define LIVESUMMARY trNOOP("Live Interactive VDR Environment")
 
 namespace vdrlive {
@@ -102,6 +102,8 @@ class Setup
     const std::string &GetChanLogoDir() const { return m_chanlogodir; }
     bool GetShowChannelsWithoutEPG() const { return m_showChannelsWithoutEPG != 0; }
     std::string GetSeriesFolders() const { return m_seriesFolders; }
+    bool GetShowSpecialFolders() const { return m_showSpecialFolders; }
+    bool GetLandscapeThumbnails() const { return m_landscapeThumbnails; }
     int GetMaxTooltipChars() const { return m_maxTooltipChars; }
 
     void SetLastChannel(int lastChannel) { m_lastChannel = lastChannel; }
@@ -130,6 +132,8 @@ class Setup
     void SetShowIMDb(bool show) { m_showIMDb = show ? 1 : 0; }
     void SetShowChannelsWithoutEPG(bool show) { m_showChannelsWithoutEPG = show ? 1 : 0; }
     void SetSeriesFolders(std::string const & seriesFolders) { m_seriesFolders = seriesFolders; }
+    void SetShowSpecialFolders(bool show) { m_showSpecialFolders = show ? 1 : 0; }
+    void SetLandscapeThumbnails(bool landcape) { m_landscapeThumbnails = landcape ? 1 : 0; }
 
     bool SaveSetup();
 
@@ -202,6 +206,8 @@ class Setup
     int m_showIMDb;
     int m_showChannelsWithoutEPG;
     std::string m_seriesFolders;
+    int m_showSpecialFolders;
+    int m_landscapeThumbnails;
 
     const int m_maxTooltipChars = 300; // maximum number of characters to be displayed in tooltips
     bool CheckServerPort();

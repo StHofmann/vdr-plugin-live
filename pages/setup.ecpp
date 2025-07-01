@@ -32,6 +32,8 @@ using namespace vdrlive;
   std::string showIMDb;
   std::string showChannelsWithoutEPG;
   std::string seriesFolders;
+  std::string showSpecialFolders;
+  std::string landscapeThumbnails;
   std::string streamdevport;
   std::string streamdevtype;
   int authchanged = 0;
@@ -88,6 +90,8 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
       LiveSetup().SetShowIMDb(!showIMDb.empty());
       LiveSetup().SetShowChannelsWithoutEPG(!showChannelsWithoutEPG.empty());
       LiveSetup().SetSeriesFolders(seriesFolders);
+      LiveSetup().SetShowSpecialFolders(!showSpecialFolders.empty());
+      LiveSetup().SetLandscapeThumbnails(!landscapeThumbnails.empty());
       LiveSetup().SaveSetup();
 
       message = tr("Setup saved.");
@@ -120,6 +124,8 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
   showIMDb = LiveSetup().GetShowIMDb() ? "1" : "";
   showChannelsWithoutEPG = LiveSetup().GetShowChannelsWithoutEPG() ? "1" : "";
   seriesFolders = LiveSetup().GetSeriesFolders();
+  showSpecialFolders = LiveSetup().GetShowSpecialFolders() ? "1" : "";
+  landscapeThumbnails = LiveSetup().GetLandscapeThumbnails() ? "1" : "";
 </%cpp>
 <& pageelems.doc_type &>
 <html>
@@ -311,6 +317,18 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
             <td class="label leftcol"><div class="withmargin"><$ tr("Folders for scraping series episodes") $>:</div></td>
             <td class="rightcol"><input type="text" name="seriesFolders" value="<$ seriesFolders $>" id="seriesFolders" />
               <& tooltip.help text=(tr("Recording considered a series if such a folder is part of the pathname; use file-system encoding and separate folder specifications with a semi-colon ';'")) &></td>
+          </tr>
+          <tr>
+            <td class="label leftcol"><div class="withmargin"><$ tr("Show special folders in recordings") $>:</div></td>
+            <td class="rightcol">
+              <input type="checkbox" name="showSpecialFolders" id="showSpecialFolders" value="1"<%cpp> CHECKIF(!showSpecialFolders.empty()); </%cpp>/>
+            </td>
+          </tr>
+          <tr>
+            <td class="label leftcol"><div class="withmargin"><$ tr("Landscape recording images") $>:</div></td>
+            <td class="rightcol">
+              <input type="checkbox" name="landscapeThumbnails" id="landscapeThumbnails" value="1"<%cpp> CHECKIF(!landscapeThumbnails.empty()); </%cpp>/>
+            </td>
           </tr>
 % }
           <tr>

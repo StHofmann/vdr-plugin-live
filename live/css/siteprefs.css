@@ -186,17 +186,17 @@ div.thumb {
   overflow: visible;
 }
 
-div.thumb img.thumbpt {
+div.thumb img.thumb {
   transform-origin: left top;
 }
 
-div.thumb img.thumbpt:hover {
+div.thumb img.thumb:hover {
   transform: scale(var(--thumb-image-hover-scale));
   box-shadow: var(--thumb-image-shadow-size) var(--thumb-image-shadow-size) var(--thumb-image-shadow-blur) var(--thumb-image-shadow-color);
   transition: var(--hover-transition-time) var(--hover-transition-function);
 }
 
-div.thumb img.thumbpt:not(:hover) {
+div.thumb img.thumb:not(:hover) {
   transition: var(--hover-transition-time) var(--hover-transition-function);
 }
 

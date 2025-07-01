@@ -1,5 +1,7 @@
-CVS
 .#*
+.vscode
+CVS
+
 # supplemental files
 .cproject
 .cvsignore
@@ -11,6 +13,7 @@ apply-patches.sh
 *.REMOTE
 *~
 *.bak
+*.code-workspace
 *.new
 *.old
 *.orig

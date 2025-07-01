@@ -1,4 +1,4 @@
-This is a list of ideas and TODO-Items for live plugin.
+This is a list of ideas and TODO-Items for Live plugin.
 
 - Add better support for the numerous CSS bugs in IE. Maybe by
   splitting style files in a similar way like it is done for YAML
