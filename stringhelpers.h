@@ -181,7 +181,7 @@ enum class iterator_pos {
 
 // ===============================================================
 // === reverse iterator  ==============
-// creates a proxy iterator (derefernece returns the value)
+// creates a proxy iterator (dereference returns the value)
 // the iterator class IT must provide:
 //   operator--()
 //   operator++()
@@ -193,7 +193,7 @@ enum class iterator_pos {
 //   the empty constructor () returns an "empty" iterator which is
 //       equal to both, the begin iterator AND the end iterator
 //
-// provides a generic constructur forwarding the arguments to the constructor of IT
+// provides a generic constructor forwarding the arguments to the constructor of IT
 //
 // ===============================================================
 
@@ -205,13 +205,13 @@ template<class IT> class const_reverse_iterator {
     using difference_type = typename IT::difference_type;
     using pointer = typename IT::pointer;
     using reference = typename IT::reference;
-// explicit copy constructor to aviod that the generic constructor is used for that
+// explicit copy constructor to avoid that the generic constructor is used for that
     constexpr const_reverse_iterator(const const_reverse_iterator &rit): m_it(rit.m_it) {}
     constexpr const_reverse_iterator(      const_reverse_iterator &rit): const_reverse_iterator(const_cast<const const_reverse_iterator&>(rit)) {}
 // ====  constructor for the end iterator ======================================
     constexpr explicit const_reverse_iterator(): m_it(iterator_begin()) { }
 
-// generic constructur, forward arguments to underlying iterator
+// generic constructor, forward arguments to underlying iterator
     template<typename... Args>
     constexpr explicit const_reverse_iterator(Args&&... args): m_it(std::forward<Args>(args)...) {}
 
@@ -282,7 +282,7 @@ inline int utf8CodepointIsValid(cSv sv, cSv::size_type pos) {
  *     wint_t value = *it;
  *     ... (do something with value)
  *   }
- * example 2:  (with a very small preformance penalty to example 1)
+ * example 2:  (with a very small performance penalty to example 1)
  * for (wint_t value: const_simple_utf8_iterator("2sßöw") ) { ... }
 */
 template<class C_IT>
@@ -300,7 +300,7 @@ template<class C>
     constexpr explicit const_simple_utf8_iterator(iterator_end d, C &s): m_it_next(s.cend()), m_it_end(s.cend()) { }
 
 // end iterator if iterator_end cannot be used
-// we asume that the default constructed iterator != any other iterator
+// we assume that the default constructed iterator != any other iterator
     constexpr explicit const_simple_utf8_iterator(): m_it_next(C_IT()), m_it_end(C_IT()) { }
 
     C_IT pos() const { return m_it_next; }
@@ -477,13 +477,13 @@ template<class C_IT>
 class const_reverse_utf8_iterator: public const_reverse_iterator<const_utf8_iterator<C_IT>> {
   public:
 // Generic constructor to create a new reverse iterator, forwarding the arguments to the underlying classes
-    explicit const_reverse_utf8_iterator(): const_reverse_iterator<const_utf8_iterator<C_IT>>() {}  // end iteratr
+    explicit const_reverse_utf8_iterator(): const_reverse_iterator<const_utf8_iterator<C_IT>>() {}  // end iterator
     template<typename... Args> explicit const_reverse_utf8_iterator(Args&&... args):
       const_reverse_iterator<const_utf8_iterator<C_IT>>(iterator_end(), std::forward<Args>(args)...) {}
 // But: It must not be used with const_reverse_utf8_iterator itself.
 // To prevent this, we use explicit.
 // Still not good enough for const_reverse_utf8_iterator<const char*> et1(at1);
-// Also, const_reverse_utf8_iterator(const_reverse_utf8_iterator& rit) = default; is not sufficent for that
+// Also, const_reverse_utf8_iterator(const_reverse_utf8_iterator& rit) = default; is not sufficient for that
 // So we need explicit constructors:
     constexpr const_reverse_utf8_iterator(const const_reverse_utf8_iterator& rit):
       const_reverse_iterator<const_utf8_iterator<C_IT>>(static_cast<const const_reverse_iterator<const_utf8_iterator<C_IT>>&>(rit)){}
@@ -535,7 +535,7 @@ inline wint_t next_non_punct(wint_t val, const_simple_utf8_iterator<I> &it) {
 template<class T, class U>    // T,U have iterators with char value type
 inline int compare_utf8_lower_case_ignore_punct(T ls, U rs, int *num_equal_chars = nullptr) {
 // compare utf8 strings case-insensitive and ignore punctuation characters
-// num_equal_chars has no measureable performance impact
+// num_equal_chars has no measurable performance impact
 // num_equal_chars will be one to high if the compare result is 0 and both end with a punctuation character
 
   const_simple_utf8_iterator i_ls(ls);
@@ -610,7 +610,7 @@ inline void utf8_sanitize_string(std::string &s) {
 }
 inline bool is_equal_utf8_sanitized_string(cSv s, const char *other) {
 // return true if s == other
-// invalid utf8 in other is replaced with '?' before the compaison
+// invalid utf8 in other is replaced with '?' before the comparison
 // other must be zero terminated
   if (!other) return s.empty();
   auto len = strlen(other);
@@ -701,7 +701,7 @@ template<class T> inline T parse_int_check_error(cSv sv, cSv::size_type start, c
   if (context) {
 // check for other errors -> any non-whitespace after number?
     if (remove_trailing_whitespace(sv).length() != end)
-      isyslog(PLUGIN_NAME_I18N ": WARNING, trailing characters after convertion from \"%.*s\" to int/bool, context %s", (int)sv.length(), sv.data(), context);
+      isyslog(PLUGIN_NAME_I18N ": WARNING, trailing characters after conversion from \"%.*s\" to int/bool, context %s", (int)sv.length(), sv.data(), context);
   }
   return val;
 }
@@ -794,14 +794,14 @@ template<class T> inline T parse_hex(cSv sv, size_t *num_digits = 0) {
 // split string at delimiter in two parts
 // =========================================================
 
-inline bool splitString(cSv str, cSv delim, size_t minLengh, cSv &first, cSv &second) {
-// true if delim is part of str, and length of first & second >= minLengh
+inline bool splitString(cSv str, cSv delim, size_t minLength, cSv &first, cSv &second) {
+// true if delim is part of str, and length of first & second >= minLength
   for (std::size_t found = str.find(delim); found != std::string::npos; found = str.find(delim, found + 1)) {
     cSv first_guess = remove_trailing_whitespace(str.substr(0, found));
-    if (first_guess.length() >= minLengh) {
+    if (first_guess.length() >= minLength) {
 // we found the first part. Is the second part long enough?
       cSv second_guess = remove_leading_whitespace(str.substr(found + delim.length()));
-      if (second_guess.length() < minLengh) return false; // nothing found
+      if (second_guess.length() < minLength) return false; // nothing found
 
       first = first_guess;
       second = second_guess;
@@ -811,11 +811,11 @@ inline bool splitString(cSv str, cSv delim, size_t minLengh, cSv &first, cSv &se
   return false; // nothing found
 }
 
-inline cSv SecondPart(cSv str, cSv delim, size_t minLengh) {
-// return second part of split string if delim is part of str, and length of first & second >= minLengh
+inline cSv SecondPart(cSv str, cSv delim, size_t minLength) {
+// return second part of split string if delim is part of str, and length of first & second >= minLength
 // otherwise, return ""
   cSv first, second;
-  if (splitString(str, delim, minLengh, first, second)) return second;
+  if (splitString(str, delim, minLength, first, second)) return second;
   else return cSv();
 }
 
@@ -842,6 +842,62 @@ inline cSv SecondPart(cSv str, cSv delim) {
 // =========================================================
 
 namespace stringhelpers_internal {
+
+// ====================================================
+// numChars(T i), for signed & unsigned integers
+// return number of chars needed to print i
+// for neg. integers: including the - sign
+// ====================================================
+static const int numChars_guess[] = {
+    0, 0, 0, 0, 1, 1, 1, 2, 2, 2,
+    3, 3, 3, 3, 4, 4, 4, 5, 5, 5,
+    6, 6, 6, 6, 7, 7, 7, 8, 8, 8,
+    9, 9, 9,
+    9, 10, 10, 10, 11, 11, 11,
+    12, 12, 12, 12, 13, 13, 13,
+    14, 14, 14, 15, 15, 15, 15,
+    16, 16, 16, 17, 17, 17,
+    18, 18, 18, 18, 19
+};
+
+// i > 0 is pre-requisite for all usedBinDigits methods. !!! not checked in usedBinDigits !!!!!
+inline int usedBinDigits(unsigned char i) {
+  return 8*sizeof(unsigned int)-__builtin_clz((unsigned int)i);
+}
+inline int usedBinDigits(unsigned short int i) {
+  return 8*sizeof(unsigned int)-__builtin_clz((unsigned int)i);
+}
+inline int usedBinDigits(unsigned int i) {
+// if we write:
+//   return 4*sizeof(unsigned long long int)-__builtin_clzll(0x80000000 | ((unsigned long long int)i << 32));
+// this also works for i == 0. But, no performance improvement. So keep it simple
+  return 8*sizeof(unsigned int)-__builtin_clz(i);
+}
+inline int usedBinDigits(unsigned long int i) {
+  return 8*sizeof(unsigned long int)-__builtin_clzl(i);
+}
+inline int usedBinDigits(unsigned long long int i) {
+  return 8*sizeof(unsigned long long int)-__builtin_clzll(i);
+}
+
+template<typename T, std::enable_if_t<std::is_unsigned_v<T>, bool> = true>
+  inline int numChars_internal(T i) {
+// calculate the number of decimal digits from the binary digits
+// i > 0 !!! not checked here !!!!!
+    int digits = numChars_guess[usedBinDigits(i)];
+    return digits + (i > to_chars10_internal::max_int[digits]);
+  }
+template<typename T, std::enable_if_t<std::is_unsigned_v<T>, bool> = true>
+  inline int numChars(T i) {
+  return i?numChars_internal(i):1;
+}
+template<typename T, std::enable_if_t<std::is_signed_v<T>, bool> = true>
+  inline int numChars(T i) {
+    typedef std::make_unsigned_t<T> TU;
+    if (i > 0) return numChars_internal(static_cast<TU>(i));
+    if (i < 0) return numChars_internal(~(static_cast<TU>(i)) + static_cast<TU>(1)) + 1;
+    return 1;
+  }
 
 //  ==== itoaN ===================================================================
 // itoaN: Template for fixed number of characters, left fill with 0
@@ -935,7 +991,7 @@ inline T addCharsHex(char *buffer, size_t num_chars, T value) {
 // value is written with num_chars chars
 //   if value is too small -> left values filled with 0
 //   if value is too high  -> the highest numbers are not written. This is not checked!
-//           but, you can check: if the returned value is != 0, some chars are not written
+//        but, you can check: if the returned value is != 0, some chars have not been written
   const char *hex_chars = "0123456789ABCDEF";
   for (char *be = buffer + num_chars -1; be >= buffer; --be, value /= 16) *be = hex_chars[value%16];
   return value;
@@ -953,7 +1009,7 @@ class cToSv {
 // don't try to implement! Otherwise, users will expect something like
 //  a = a.substr(0,3);
 // and similar to work. Which is possible, implementing lost's of different cases.
-// it's just not worth the offert. For normal =, users can write
+// it's just not worth the effort. For normal =, users can write
 //  a = a.erase(0).append(...)
 
     virtual ~cToSv() {}
@@ -1035,7 +1091,7 @@ inline ssize_t read(int fd, char *buf, size_t count, const char *filename) {
     if (num_read1 == -1) {
 // On error, -1 is returned, and errno is set to indicate the error.
 // In this case, it is left unspecified whether the file position changes.
-      if (errno == ENOENT || errno == EINTR || errno == EEXIST) return -2;  // I really don't understand why ENOENT or EEXIST would be reported. But we retry ...
+      if (errno == ENOENT || errno == EINTR || errno == EEXIST || errno == 0) return -2;  // I really don't understand why ENOENT or EEXIST would be reported. But we retry ...
       esyslog(PLUGIN_NAME_I18N " ERROR: read failed, errno %d, error %m, filename %s, count %zu, num_read = %zu", errno, filename, count, num_read);
       return -4;
     }
@@ -1091,7 +1147,7 @@ inline ssize_t read_file(const char *filename, char *&buf, size_t count) {
 // >= 0: number of bytes read
 //    note: this can be smaller than the number of bytes we try to read (filesize if count == 0, otherwise min(count, filesize))
 //          in this case, a syslog error is already written.
-// >  0: if no buf was provided, buf with 1 extra bype is allocated with malloc and must be freed by the caller!
+// >  0: if no buf was provided, buf with 1 extra byte is allocated with malloc and must be freed by the caller!
 // == 0: 0 bytes read. File empty or error. NO buffer is allocated
 
 // -3: file does not exist (no error in syslog)
@@ -1109,22 +1165,27 @@ inline ssize_t read_file(const char *filename, char *&buf, size_t count) {
 
 class cToSvFile: public cToSv {
   public:
+    cToSvFile() { m_s[0] = 0; }
     cToSvFile(cStr filename, size_t max_length = 0) { load(filename, max_length ); }
     operator cSv() const { return m_result; }
     char *data() { return m_s; } // Is zero terminated
     const char *c_str() const { return m_s; } // Is zero terminated
     operator cStr() const { return m_s; }
     size_t length() const { return m_result.length(); }
+    size_t size() const { return m_result.length(); }
     bool exists() const { return m_exists; }
     ~cToSvFile() { if (m_s != m_empty) std::free(m_s); }
-  private:
-    void load(const char *filename, size_t max_length) {
+    void load(cStr filename, size_t max_length = 0) {
+      if (m_exists) {
+        dsyslog(PLUGIN_NAME_I18N " %s, ERROR file already esixsts, filename %s", __func__, filename.c_str() );
+        if (m_s != m_empty) std::free(m_s);
+      }
       m_s = nullptr;
       ssize_t ret = stringhelpers_internal::read_file(filename, m_s, max_length);
       if (m_s && ret <= 0)
-        esyslog(PLUGIN_NAME_I18N " %s, ERROR (please write a bug report): m_s && ret <= 0, filename %s", __func__, filename);
+        esyslog(PLUGIN_NAME_I18N " %s, ERROR (please write a bug report): m_s && ret <= 0, filename %s", __func__, filename.c_str() );
       if (!m_s && ret > 0)
-        esyslog(PLUGIN_NAME_I18N " %s, ERROR (please write a bug report): !m_s && ret > 0, filename %s", __func__, filename);
+        esyslog(PLUGIN_NAME_I18N " %s, ERROR (please write a bug report): !m_s && ret > 0, filename %s", __func__, filename.c_str() );
 
       m_exists = ret != -3;
       if (ret > 0) {
@@ -1136,8 +1197,9 @@ class cToSvFile: public cToSv {
         m_s[0] = 0;
       }
     }
-    bool m_exists;
-    char *m_s;
+  private:
+    bool m_exists = false;
+    char *m_s = m_empty;
     cSv m_result;
     char m_empty[1];
 };
@@ -1226,6 +1288,10 @@ class cToSvConcat: public cToSv {
       m_pos_for_append = to_chars10_internal::itoa(m_pos_for_append, i);
       return *this;
     }
+// double
+    cToSvConcat &operator<<(double i) {
+      return appendFormatted("%g", i);
+    }
 
 // ========================
 // overloads for append. Should be compatible to std::string.append(...)
@@ -1259,7 +1325,7 @@ class cToSvConcat: public cToSv {
 // appendInt:   append integer (with some format options)
 template<size_t M, typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
     cToSvConcat &appendInt(T i) {
-// append integer with min widh M. Left fill with 0, if required.
+// append integer with min width M. Left fill with 0, if required.
       if (m_pos_for_append + std::max(M, (size_t)20) > m_be_data) ensure_free(std::max(M, (size_t)20));
       m_pos_for_append = stringhelpers_internal::itoa_min_width<M, T>(m_pos_for_append, i);
       return *this;
@@ -1313,7 +1379,7 @@ template<typename T, std::enable_if_t<sizeof(T) == 16, bool> = true>
         append_utf8(std::towlower(*it));
       return *this;
     }
-// apend text. Before appending, replace all occurrences of substring with replacement
+// append text. Before appending, replace all occurrences of substring with replacement
     cToSvConcat &appendReplace(cSv text, cSv substring, cSv replacement) {
       size_t pos = 0, found;
       while ( (found = text.find(substring, pos)) != std::string_view::npos) {
@@ -1346,12 +1412,12 @@ template<typename T, std::enable_if_t<sizeof(T) == 16, bool> = true>
     }
 
 // =======================
-// appendFormated append formatted
+// appendFormatted append formatted
 // __attribute__ ((format (printf, 2, 3))) can not be used, but should work starting with GCC 13.1
-    template<typename... Args> cToSvConcat &appendFormated(const char *fmt, Args&&... args) {
+    template<typename... Args> cToSvConcat &appendFormatted(const char *fmt, Args&&... args) {
       int needed = snprintf(m_pos_for_append, m_be_data - m_pos_for_append, fmt, std::forward<Args>(args)...);
       if (needed < 0) {
-        esyslog(PLUGIN_NAME_I18N ": ERROR, cToScConcat::appendFormated needed = %d, fmt = %s", needed, fmt);
+        esyslog(PLUGIN_NAME_I18N ": ERROR, cToScConcat::appendFormatted needed = %d, fmt = %s", needed, fmt);
         return *this; // error in snprintf
       }
       if (needed < m_be_data - m_pos_for_append) {
@@ -1361,7 +1427,7 @@ template<typename T, std::enable_if_t<sizeof(T) == 16, bool> = true>
       ensure_free(needed + 1);
       needed = sprintf(m_pos_for_append, fmt, std::forward<Args>(args)...);
       if (needed < 0) {
-        esyslog(PLUGIN_NAME_I18N ": ERROR, cToScConcat::appendFormated needed (2) = %d, fmt = %s", needed, fmt);
+        esyslog(PLUGIN_NAME_I18N ": ERROR, cToScConcat::appendFormatted needed (2) = %d, fmt = %s", needed, fmt);
         return *this; // error in sprintf
       }
       m_pos_for_append += needed;
@@ -1395,7 +1461,7 @@ template<typename T, std::enable_if_t<sizeof(T) == 16, bool> = true>
 // appendUrlEscaped
     cToSvConcat &appendUrlEscaped(cSv sv) {
       const char* reserved = " !#$&'()*+,/:;=?@[]\"<>\n\r\t\\%";
-// in addition to the reserved URI charaters as defined here https://en.wikipedia.org/wiki/Percent-encoding
+// in addition to the reserved URI characters as defined here https://en.wikipedia.org/wiki/Percent-encoding
 // also escape html characters \"<>\n\r so no additional html-escaping is required
 // \ is escaped for easy use in strings where \ has a special meaning
       for (size_t pos = 0; pos < sv.length(); ++pos) {
@@ -1511,11 +1577,11 @@ class cToSvToLower: public cToSvConcat<N> {
 };
 
 template<std::size_t N = 255>
-class cToSvFormated: public cToSvConcat<N> {
+class cToSvFormatted: public cToSvConcat<N> {
   public:
 // __attribute__ ((format (printf, 2, 3))) can not be used, but should work starting with GCC 13.1
-    template<typename... Args> cToSvFormated(const char *fmt, Args&&... args) {
-      this->appendFormated(fmt, std::forward<Args>(args)...);
+    template<typename... Args> cToSvFormatted(const char *fmt, Args&&... args) {
+      this->appendFormatted(fmt, std::forward<Args>(args)...);
     }
 };
 class cToSvDateTime: public cToSvConcat<255> {
@@ -1583,7 +1649,7 @@ void stringAppend(std::string &str, const T &n, const U &u, Args&&... args) {
 // 3: Otherwise:
 //      in case of unexpected values in sv, if context is provided, write isyslog WARNING message
 //      note: any non-whitespace after the data is considered as unexpected values
-//      return the best gues (see 1).
+//      return the best guess (see 1).
 */
 
 // trivial (to cSv, std::string, ...)
@@ -2073,7 +2139,7 @@ template<class I> class cRange {
 };
 
 /*
- * class cUnion: iterate over serveral containers, as if it was one.
+ * class cUnion: iterate over several containers, as if it was one.
  * value_type of first container will be used.
 */
 template<class T_V, class T_I, class T_IE, class T_I2> class union_iterator {
@@ -2222,7 +2288,7 @@ class cContainer {
 /*
  * class cSortedVector:
  *   - unique elements only
- *   - inser with O(N)
+ *   - insert with O(N)
  *   - search with O(log(N))
  * see https://lafstern.org/matt/col1.pdf
 */

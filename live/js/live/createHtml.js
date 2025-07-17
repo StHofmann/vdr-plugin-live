@@ -117,6 +117,7 @@ function add2ndLine(s, shortText, description) {
     empty = false
   }
   if (empty) s.a += '&nbsp;'
+  s.a += '</div>'
 }
 
 // do not HTML-encode title; will be HTML-encoded here!

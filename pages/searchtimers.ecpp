@@ -3,6 +3,7 @@
 #include <epgsearch.h>
 #include <setup.h>
 #include <users.h>
+#include <tools.h>
 
 using namespace vdrlive;
 
@@ -17,6 +18,7 @@ bool logged_in(false);
 </%session>
 <%include>page_init.eh</%include>
 <%cpp>
+reply.setHeader (tnt::httpheader::cacheControl, "no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate", true);
 if (!logged_in && LiveSetup().UseAuth()) {
   cToSvConcat targetUrl = "/login.html?redirect=";
   targetUrl.appendUrlEscaped(request.getQuery());
@@ -26,22 +28,32 @@ if (!logged_in && LiveSetup().UseAuth()) {
 <%cpp>
   pageTitle = tr("Search timers");
   SearchTimers timers;
-  if ( !searchtimerid.empty() ) {
-    if (action == "toggle")
-      timers.ToggleActive(searchtimerid);
-    if (action == "delete") {
-      if (!cUser::CurrentUserHasRightTo(UR_DELSTIMERS))
-        throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
-      timers.Delete(searchtimerid);
+  if (!action.empty() ) {
+    if (!searchtimerid.empty() ) {
+      if (action == "toggle")
+        timers.ToggleActive(searchtimerid);
+      if (action == "delete") {
+        if (!cUser::CurrentUserHasRightTo(UR_DELSTIMERS))
+          throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
+        timers.Delete(searchtimerid);
+      }
     }
-  }
-  if (action == "update")
-    timers.TriggerUpdate();
+    if (action == "update")
+      timers.TriggerUpdate();
+</%cpp>
+<!DOCTYPE html>
+<html>
+  <script>
+    history.go(-1);
+  </script>
+</html>
+<%cpp>
+  }  else { // endif (!action.empty()
 </%cpp>
 <& pageelems.doc_type &>
 <html>
   <head>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>VDR-Live - <$ pageTitle $></title>
     <& pageelems.stylesheets &>
     <& pageelems.ajax_js &>
@@ -73,8 +85,7 @@ if (!logged_in && LiveSetup().UseAuth()) {
           char *timerID = timerID_b+20;
           *(timerID) = 0;
           if (i < 10) *(--timerID) = '0' + i;
-          else for (; i; i /= 10) *(--timerID) = '0' + (i%10);
-
+          else for (; i; i /= 10) *(--timerID) = '0' + (i % 10);
 </%cpp>
         <tr class="<$ timer->UseAsSearchTimer() ? "active" : "inactive" $>">
           <td class="action leftcol <? bottom ? "bottomrow" ?>"><%cpp> if(timer->UseAsSearchTimer()) { </%cpp><img class="icon" src="<$ LiveSetup().GetThemedLink("img", "arrow.png") $>" alt="" /><%cpp> } </%cpp></td>
@@ -93,6 +104,16 @@ if (!logged_in && LiveSetup().UseAuth()) {
         </tr>
 <%cpp>
         }
+        if (timers.size() == 0) {
+</%cpp>
+          <# add the message in a table row beneath the header, because the message alone looks weird #>
+          <tr>
+            <td class="message leftcol rightcol bottomrow" colspan="8">
+              <div><$ tr("No searchtimers found") $></div>
+            </td>
+          </tr>
+<%cpp>
+        }
 </%cpp>
         <tr class="spacer">
           <td colspan="8"/>
@@ -102,6 +123,7 @@ if (!logged_in && LiveSetup().UseAuth()) {
     </div>
   </body>
 </html>
+% }
 <%include>page_exit.eh</%include>
 
 <%def searchevent_actions>

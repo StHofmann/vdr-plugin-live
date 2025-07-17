@@ -249,10 +249,11 @@ namespace vdrlive {
       cSv Title() const { return m_title; }
       cSv ShortText() const { return m_shortText; }
       cSv Description() const { return m_description; }
-      cSv ParentalRatingString() const { return m_parentalRatingString; }
       cSv ChannelName() const { return m_channelName; }
       cSv Folder() const { return m_folder; }
       int HierarchyLevels() const { return std::count(m_name_vdr.begin(), m_name_vdr.end(), FOLDERDELIMCHAR); }
+      int ParentalRating() const { return m_parentalRating; }
+      cSv ParentalRatingString() const { return m_parentalRatingString; }
       double FramesPerSecond(void) const { return m_framesPerSecond; }
       uint16_t FrameWidth(void) const { return m_frameWidth; }
       uint16_t FrameHeight(void) const { return m_frameHeight; }
@@ -319,8 +320,9 @@ namespace vdrlive {
       std::string m_title;
       std::string m_shortText;
       std::string m_description;
-      std::string m_parentalRatingString;
       std::string m_channelName;
+      uchar m_parentalRating = 0;
+      std::string m_parentalRatingString;
       mutable int m_fileSizeMB = -1;
       time_t m_startTime = 0;
       mutable time_t m_stopRecording = std::numeric_limits<time_t>::max();  // this is an estimate only
@@ -615,7 +617,7 @@ cToSvConcat<N> & StringAppendFrameParams(cToSvConcat<N> &s, const RecordingsItem
   if (itemRec->FrameWidth() && itemRec->FrameHeight() ) {
     s << itemRec->FrameWidth() << 'x' << itemRec->FrameHeight();
     if (itemRec->FramesPerSecond() > 0) {
-      s.appendFormated("/%.2g", itemRec->FramesPerSecond() );
+      s.appendFormatted("/%.2g", itemRec->FramesPerSecond() );
       if (itemRec->ScanType() != stUnknown)
         s.append(1, itemRec->ScanTypeChar());
      }

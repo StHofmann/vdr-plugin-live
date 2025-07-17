@@ -772,15 +772,10 @@ int GetNumberOfTsFiles(cSv fileName) {
     if (info) {
       m_title = cSv(info->Title());
       m_shortText = cSv(info->ShortText());
-      if (info->GetEvent() && info->GetEvent()->ParentalRating()) {
-          m_shortText += "\n";
-          m_shortText += info->GetEvent()->GetParentalRatingString();
-      }
       m_description = cSv(info->Description());
-      if (info->GetEvent()) {
-        m_parentalRatingString = cSv(*info->GetEvent()->GetParentalRatingString());
-      }
       m_channelName = cSv(info->ChannelName());
+      if (info->GetEvent()) m_parentalRating = info->GetEvent()->ParentalRating();
+      if (info->GetEvent()) m_parentalRatingString = cSv(*info->GetEvent()->GetParentalRatingString());
 #if VDRVERSNUM >= 20605
       m_framesPerSecond  = info->FramesPerSecond();
       m_frameWidth = info->FrameWidth();
@@ -808,8 +803,8 @@ int GetNumberOfTsFiles(cSv fileName) {
       if (!is_equal_utf8_sanitized_string(m_title, info->Title())) return true;
       if (!is_equal_utf8_sanitized_string(m_shortText, info->ShortText())) return true;
       if (!is_equal_utf8_sanitized_string(m_description, info->Description())) return true;
-      if (!is_equal_utf8_sanitized_string(m_parentalRatingString, info->GetEvent() ? *info->GetEvent()->GetParentalRatingString() : nullptr)) return true;
       if (!is_equal_utf8_sanitized_string(m_channelName, info->ChannelName())) return true;
+      if (info->GetEvent() && m_parentalRating != info->GetEvent()->ParentalRating()) return true;
 #if VDRVERSNUM >= 20605
       if (m_framesPerSecond != info->FramesPerSecond()) return true;
       if (m_frameWidth != info->FrameWidth()) return true;
@@ -832,6 +827,7 @@ int GetNumberOfTsFiles(cSv fileName) {
   {
     m_shortText = cSv(event->ShortText());
     m_description = std::string(cSv(event->Description()));
+    m_parentalRating = event->ParentalRating();
     m_parentalRatingString = std::string(cSv(*event->GetParentalRatingString()));
     m_startTime = event->StartTime();
     m_duration = event->Duration() / 60; // duration in minutes
@@ -1496,9 +1492,9 @@ void AppendScraperData(cToSvConcat<0> &target, cSv s_IMDB_ID, const cTvMedia &s_
     int fileSizeMB = FileSizeMB();
     if(fileSizeMB >= 0)
       if (fileSizeMB >= 1000)
-        target.appendFormated(tr("%.1f GB"), (double)fileSizeMB / 1000.);
+        target.appendFormatted(tr("%.1f GB"), (double)fileSizeMB / 1000.);
       else
-        target.appendFormated(tr("%'d MB"), fileSizeMB);
+        target.appendFormatted(tr("%'d MB"), fileSizeMB);
     else
       target.append("&nbsp;");
     target.append("\",");
