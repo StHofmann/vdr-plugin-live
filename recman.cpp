@@ -98,9 +98,10 @@ Otherwise, the rec tree is re-created from currnet data.
 
   bool RecordingsManager::UpdateRecording(cSv hash, cSv directory, cSv name, bool copy, cSv title, cSv shorttext, cSv description)
   {
-    std::string new_filename = FileSystemExchangeChars(directory.empty() ? name : cSv(cToSvReplace(directory, "/", "~") << "~" << name), true);
+//  std::string new_filename = FileSystemExchangeChars(directory.empty() ? name : cSv(cToSvReplace(directory, "/", "~") << "~" << name), true);
+    std::string new_filename = FileSystemExchangeChars(directory.empty() ? name : cSv(cToSvConcat(directory, "~", name)), true);
     // Check for injections that try to escape from the video dir.
-    if (new_filename.compare(0, 3, "..~") == 0 || new_filename.find("~..") != std::string::npos) {
+    if (new_filename.compare(0, 3, "../") == 0 || new_filename.find("/..") != std::string::npos) {
       esyslog("live: renaming failed: new name invalid \"%.*s\"", (int)new_filename.length(), new_filename.data());
       return false;
     }
@@ -194,19 +195,19 @@ Otherwise, the rec tree is re-created from currnet data.
     if (!recording) return 1;
     if (name) *name = cSv(recording->Name());
 
-    // check if recording is activ
-    std::string l_name(recording->FileName());
-    if (cRecordControl *rc = cRecordControls::GetRecordControl(l_name.c_str())) {
-        // local timer is activ
+    // check if recording is active
+    std::string fileName(recording->FileName());
+    if (cRecordControl *rc = cRecordControls::GetRecordControl(fileName.c_str())) {
+        // local timer is active
         if (cTimer *Timer = rc->Timer()) {
-            isyslog("live: deactivate local timer %s before delete of recording %s", *Timer->ToDescr(), name->c_str());
+            isyslog("live: deactivating local timer %s before deleting recording %s", *Timer->ToDescr(), name->c_str());
             Timer->OnOff();
             Timers->SetModified();
         }
     }
     else {
         // remote timer
-        cString TimerId = GetRecordingTimerId(l_name.c_str());
+        cString TimerId = GetRecordingTimerId(fileName.c_str());
         if (*TimerId) {
             int Id;
             char *RemoteBuf = NULL;
@@ -218,18 +219,18 @@ Otherwise, the rec tree is re-created from currnet data.
                     cTimer OldTimer = *Timer;
                     Timers->SetSyncStateKey(StateKeySVDRPRemoteTimersPoll);
                     cString ErrorMessage1;
-                    if (HandleRemoteTimerModifications(NULL, Timer, &ErrorMessage1)) { // delete activ timer on remote vdr
-                        isyslog("live: deactivate remote timer %s before delete of recording %s", *Timer->ToDescr(), name->c_str());
+                    if (HandleRemoteTimerModifications(NULL, Timer, &ErrorMessage1)) { // delete active timer on remote VDR
+                        isyslog("live: deactivating remote timer %s before deleting recording %s", *Timer->ToDescr(), name->c_str());
                         Timer->OnOff();
                         Timers->SetModified();
                         cString ErrorMessage2;
-                        if (!HandleRemoteTimerModifications(Timer, NULL, &ErrorMessage2)) {  // add deactived timer on remote vdr
-                            esyslog("live: add inactiv remote timer %s failed: %s", *Timer->ToDescr(), *ErrorMessage2);
+                        if (!HandleRemoteTimerModifications(Timer, NULL, &ErrorMessage2)) {  // add deactivated timer on remote VDR
+                            esyslog("live: adding inactive remote timer %s failed: %s", *Timer->ToDescr(), *ErrorMessage2);
                             return 2;
                         }
                     }
                     else {
-                        esyslog("live: delete of activ remote timer %s failed: %s", *Timer->ToDescr(), *ErrorMessage1);
+                        esyslog("live: deleting active remote timer %s failed: %s", *Timer->ToDescr(), *ErrorMessage1);
                         return 2;
                     }
                 }
@@ -237,7 +238,7 @@ Otherwise, the rec tree is re-created from currnet data.
         }
     }
     bool result = recording->Delete();
-    Recordings->DelByName(l_name.c_str());
+    Recordings->DelByName(fileName.c_str());
     return result?0:3;
   }
 
@@ -650,7 +651,7 @@ bool searchTitle(RecordingsItemRec *&RecItem, const std::vector<RecordingsItemRe
   {
     std::string basePath0(basePath);
     if (basePath.empty() ) dirs.push_back("");
-    else basePath0.append("/");
+    else basePath0.append(1, FOLDERDELIMCHAR);
     size_t basePath0_len = basePath0.length();
     for (const auto &subdir: m_subdirs) {
       basePath0.erase(basePath0_len);

@@ -599,7 +599,7 @@ inline void utf8_sanitize_string(std::string &s) {
     int len = utf8CodepointIsValid(p);
     if (len == 0) {
       if (!error_reported) {
-        isyslog(PLUGIN_NAME_I18N ": WARNING, invalid utf8 in string %s", s.c_str());
+        dsyslog(PLUGIN_NAME_I18N ": WARNING, invalid utf8 in string %s", s.c_str());
         error_reported = true;
       }
       *p = '?';
@@ -663,12 +663,23 @@ inline cSv remove_trailing_whitespace(cSv sv) {
 // return a string_view with trailing whitespace from sv removed
 // for performance: see remove_leading_whitespace
   for (cSv::size_type i = sv.length(); i > 0; ) {
+    --i;
+    if ((unsigned char)sv[i] > 32) return sv.substr(0, i+1);  // non whitespace found at i -> length i+1 !!!
+  }
+  return cSv();
+}
+/*
+inline cSv remove_trailing_whitespace(cSv sv) {
+// return a string_view with trailing whitespace from sv removed
+// for performance: see remove_leading_whitespace
+  for (cSv::size_type i = sv.length(); i > 0; ) {
     i = sv.find_last_not_of(' ', i-1);
     if (i == std::string_view::npos) return cSv(); // only ' '
     if (sv[i] > 0x0d || sv[i] < 0x09) return sv.substr(0, i+1);  // non whitespace found at i -> length i+1 !!!
   }
   return cSv();
 }
+*/
 inline cSv remove_leading_whitespace(cSv sv) {
 // return a string_view with leading whitespace from sv removed
 // for performance:
@@ -1406,6 +1417,14 @@ template<typename T, std::enable_if_t<sizeof(T) == 16, bool> = true>
     cToSvConcat &replaceAll(cSv substring, cSv replacement, size_t pos = 0) {
       while ( (pos = cSv(*this).find(substring, pos)) != std::string_view::npos) {
         replace(pos, substring.length(), replacement);
+        pos += replacement.length();
+      }
+      return *this;
+    }
+// Replaces all occurrences of character after pos with replacement
+    cToSvConcat &replaceAll(char character, cSv replacement, size_t pos = 0) {
+      while ( (pos = cSv(*this).find(character, pos)) != std::string_view::npos) {
+        replace(pos, 1, replacement);
         pos += replacement.length();
       }
       return *this;
