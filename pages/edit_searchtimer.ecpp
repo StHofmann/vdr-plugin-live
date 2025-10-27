@@ -51,7 +51,7 @@ using namespace vdrlive;
   int delrecafterdays = 0;
   int keeprecs = 0;
   int pauseonrecs = 0;
-  int blacklistmode = 0;
+  int blacklistmode = 3;
   int switchminbefore = 0;
   bool useextepginfo = false;
   std::string extepgvalues[];
@@ -67,10 +67,10 @@ using namespace vdrlive;
   int marginstart = 0;
   int marginstop = 0;
   bool usevps = false;
-  bool delmode = false;
+  int delmode = 0;
   int delaftercountrecs = 0;
   int delafterdaysoffirstrec = 0;
-  std::string blacklistids_internal;
+  std::string blacklistids;
   std::string useassearchtimerfrom;
   std::string useassearchtimerto;
   bool ignoreMissingEPGCats = false;
@@ -88,8 +88,7 @@ ChannelGroups channelGroups;
 Blacklists blacklists;
 RecordingDirs recordingdirs;
 SearchTimer* editsearchtimer;
-bool hasInsufficientFields = false;
-bool hasUnknownFields = false;
+SearchTimer newSearchTimer;
 std::string contentsFilter;
 </%request>
 <%include>page_init.eh</%include>
@@ -219,7 +218,7 @@ const char *TNT_ARRAY = "";
     searchtimer.SetPauseOnRecs(pauseonrecs);
     searchtimer.SetBlacklistMode(blacklistmode);
     if (blacklistmode == 1)
-      searchtimer.ParseBlacklist(blacklistids_internal);
+      searchtimer.ParseBlacklist(blacklistids);
     searchtimer.SetSwitchMinBefore(switchminbefore);
     searchtimer.SetUnmuteSoundOnSwitch(unmutesoundonswitch);
     searchtimer.SetAvoidRepeats(avoidrepeats);
@@ -277,138 +276,110 @@ const char *TNT_ARRAY = "";
   }
   SearchTimer* searchtimer;
   if (!searchtimerid.empty()) {
-    searchtimer = searchtimers.GetByTimerId(searchtimerid);
+    searchtimer = editsearchtimer = searchtimers.GetByTimerId(searchtimerid);
     if (!searchtimer)
       throw HtmlError( tr("Couldn't find search timer. Maybe you mistyped your request?") );
   } else {
-    // get an existing search timer for detemining the compatibility flags
-    searchtimer = &*searchtimers.begin();
-    if (searchtimer) {
-      hasInsufficientFields = searchtimer->HasInsufficientFields();
-      hasUnknownFields = searchtimer->HasUnknownFields();
-    }
-    searchtimer = new SearchTimer();
+    searchtimer = &newSearchTimer;
   }
-  if (searchtimer) {
-    search = searchtimer->Search();
-    mode = searchtimer->SearchMode();
-    tolerance = searchtimer->Tolerance();
-    matchcase = searchtimer->MatchCase();
-    usetitle = searchtimer->UseTitle();
-    usesubtitle = searchtimer->UseSubtitle();
-    usedescr = searchtimer->UseDescription();
-    usechannel = searchtimer->UseChannel();
-    channelfrom = searchtimer->ChannelMin();
-    channelto = searchtimer->ChannelMax();
-    if (!channelto.Valid() && channelfrom.Valid())
-      channelto = channelfrom;
-    if (usechannel == SearchTimer::Group)
-      changrpsel = searchtimer->ChannelText();
-    usetime = searchtimer->UseTime();
-    start_s = intToTimeString(searchtimer->StartTime() );
-    stop_s  = intToTimeString(searchtimer->StopTime() );
-    useduration = searchtimer->UseDuration();
-    if (useduration)
-    {
-      durationmin_m = searchtimer->MinDuration() % 100;
-      durationmin_h = searchtimer->MinDuration() / 100;
-      durationmax_m = searchtimer->MaxDuration() % 100;
-      durationmax_h = searchtimer->MaxDuration() / 100;
-    }
-    useweekday = searchtimer->UseDayOfWeek();
-    if (useweekday)
-    {
-      int dayofweek = searchtimer->DayOfWeek();
-      if (dayofweek >= 0)
-      {
-        wday_sun = (dayofweek == 0);
-        wday_mon = (dayofweek == 1);
-      wday_tue = (dayofweek == 2);
-        wday_wed = (dayofweek == 3);
-      wday_thu = (dayofweek == 4);
-        wday_fri = (dayofweek == 5);
-        wday_sat = (dayofweek == 6);
-      }
-      else
-      {
-      wday_sun = -dayofweek & 0x01;
-      wday_mon = -dayofweek & 0x02;
-      wday_tue = -dayofweek & 0x04;
-      wday_wed = -dayofweek & 0x08;
-      wday_thu = -dayofweek & 0x10;
-      wday_fri = -dayofweek & 0x20;
-      wday_sat = -dayofweek & 0x40;
-      }
-    }
-    useinfavorites = searchtimer->UseInFavorites();
-    useassearchtimer = searchtimer->UseAsSearchTimer();
-    if (useassearchtimer == 2)
-    {
-      useassearchtimerfrom = searchtimer->UseAsSearchTimerFrom("yyyy-mm-dd");
-      useassearchtimerto = searchtimer->UseAsSearchTimerTil("yyyy-mm-dd");
-    }
-    searchtimeraction = searchtimer->SearchTimerAction();
-    seriesrecording = searchtimer->UseSeriesRecording();
-    directory = searchtimer->Directory();
-    delrecafterdays = searchtimer->DelRecsAfterDays();
-    keeprecs = searchtimer->KeepRecs();
-    pauseonrecs = searchtimer->PauseOnRecs();
-    blacklistmode = searchtimer->BlacklistMode();
-    switchminbefore = searchtimer->SwitchMinBefore();
-    unmutesoundonswitch = searchtimer->UnmuteSoundOnSwitch();
-    useextepginfo = searchtimer->UseExtEPGInfo();
-    std::vector<std::string> infos = searchtimer->ExtEPGInfo();
-    for (unsigned int i = 0; i < extEPGInfos.size(); i++) {
-      if (i < infos.size()) {
-        cSplit<std::string> parts(infos[i], '#');
-        extepgvalues.push_back(parts.size() > 1? *(++parts.begin()):"");
-      } else
-        extepgvalues.push_back("");
-    }
-    ignoreMissingEPGCats = searchtimer->IgnoreMissingEPGCats();
-    avoidrepeats = searchtimer->AvoidRepeats();
-    allowedrepeats =  searchtimer->AllowedRepeats();
-    repeatswithindays = searchtimer->RepeatsWithinDays();
-    comparetitle = searchtimer->CompareTitle();
-    comparesubtitle = searchtimer->CompareSubtitle();
-    comparesummary = searchtimer->CompareSummary();
-    comparesummarymatchinpercent = searchtimer->CompareSummaryMatchInPercent();
-    comparedate = searchtimer->CompareDate();
-    contentsFilter = searchtimer->ContentsFilter();     // no part of form, thus camelCase
-    for (unsigned int i = 0; i < extEPGInfos.size(); i++)
-    {
-      bool selected = searchtimer->CompareCategories() & (1<<i);
-      avoidrepeatscatselected.push_back(selected);
-    }
-    priority = searchtimer->Priority();
-    lifetime = searchtimer->Lifetime();
-    marginstart = searchtimer->MarginStart();
-    marginstop = searchtimer->MarginStop();
-    usevps = searchtimer->UseVPS();
-    delmode = searchtimer->DelMode();
-    delaftercountrecs = searchtimer->DelAfterCountRecs();
-    delafterdaysoffirstrec = searchtimer->DelAfterDaysOfFirstRec();
-    // amend the compatibility flags
-    hasInsufficientFields |= searchtimer->HasInsufficientFields();
-    hasUnknownFields |= searchtimer->HasUnknownFields();
-    editsearchtimer = searchtimer;
-  }
-  else
+  search = searchtimer->Search();
+  mode = searchtimer->SearchMode();
+  tolerance = searchtimer->Tolerance();
+  matchcase = searchtimer->MatchCase();
+  usetitle = searchtimer->UseTitle();
+  usesubtitle = searchtimer->UseSubtitle();
+  usedescr = searchtimer->UseDescription();
+  usechannel = searchtimer->UseChannel();
+  channelfrom = searchtimer->ChannelMin();
+  channelto = searchtimer->ChannelMax();
+  if (!channelto.Valid() && channelfrom.Valid())
+    channelto = channelfrom;
+  if (usechannel == SearchTimer::Group)
+    changrpsel = searchtimer->ChannelText();
+  usetime = searchtimer->UseTime();
+  start_s = intToTimeString(searchtimer->StartTime() );
+  stop_s  = intToTimeString(searchtimer->StopTime() );
+  useduration = searchtimer->UseDuration();
+  if (useduration)
   {
-    for (unsigned int i = 0; i < extEPGInfos.size(); i++)
-      extepgvalues.push_back("");
-    for (unsigned int i = 0; i < extEPGInfos.size(); i++)
-      avoidrepeatscatselected.push_back(false);
-    tolerance = searchtimer->Tolerance();
-    usetitle = true;
-    usesubtitle = false;
-    usedescr = false;
-    comparesummarymatchinpercent = searchtimer->CompareSummaryMatchInPercent();
-    priority = parse_int<int>(EPGSearchSetupValues::ReadValue("DefPriority"));
-    lifetime = parse_int<int>(EPGSearchSetupValues::ReadValue("DefLifetime"));
-    marginstart = parse_int<int>(EPGSearchSetupValues::ReadValue("DefMarginStart"));
-    marginstop = parse_int<int>(EPGSearchSetupValues::ReadValue("DefMarginStop"));
+    durationmin_m = searchtimer->MinDuration() % 100;
+    durationmin_h = searchtimer->MinDuration() / 100;
+    durationmax_m = searchtimer->MaxDuration() % 100;
+    durationmax_h = searchtimer->MaxDuration() / 100;
   }
+  useweekday = searchtimer->UseDayOfWeek();
+  if (useweekday)
+  {
+    int dayofweek = searchtimer->DayOfWeek();
+    if (dayofweek >= 0)
+    {
+      wday_sun = (dayofweek == 0);
+      wday_mon = (dayofweek == 1);
+    wday_tue = (dayofweek == 2);
+      wday_wed = (dayofweek == 3);
+    wday_thu = (dayofweek == 4);
+      wday_fri = (dayofweek == 5);
+      wday_sat = (dayofweek == 6);
+    }
+    else
+    {
+    wday_sun = -dayofweek & 0x01;
+    wday_mon = -dayofweek & 0x02;
+    wday_tue = -dayofweek & 0x04;
+    wday_wed = -dayofweek & 0x08;
+    wday_thu = -dayofweek & 0x10;
+    wday_fri = -dayofweek & 0x20;
+    wday_sat = -dayofweek & 0x40;
+    }
+  }
+  useinfavorites = searchtimer->UseInFavorites();
+  useassearchtimer = searchtimer->UseAsSearchTimer();
+  if (useassearchtimer == 2)
+  {
+    useassearchtimerfrom = searchtimer->UseAsSearchTimerFrom("yyyy-mm-dd");
+    useassearchtimerto = searchtimer->UseAsSearchTimerTil("yyyy-mm-dd");
+  }
+  searchtimeraction = searchtimer->SearchTimerAction();
+  seriesrecording = searchtimer->UseSeriesRecording();
+  directory = searchtimer->Directory();
+  delrecafterdays = searchtimer->DelRecsAfterDays();
+  keeprecs = searchtimer->KeepRecs();
+  pauseonrecs = searchtimer->PauseOnRecs();
+  blacklistmode = searchtimer->BlacklistMode();
+  switchminbefore = searchtimer->SwitchMinBefore();
+  unmutesoundonswitch = searchtimer->UnmuteSoundOnSwitch();
+  useextepginfo = searchtimer->UseExtEPGInfo();
+  std::vector<std::string> infos = searchtimer->ExtEPGInfo();
+  for (unsigned int i = 0; i < extEPGInfos.size(); i++) {
+    if (i < infos.size()) {
+      cSplit<std::string> parts(infos[i], '#');
+      extepgvalues.push_back(parts.size() > 1? *(++parts.begin()):"");
+    } else
+      extepgvalues.push_back("");
+  }
+  ignoreMissingEPGCats = searchtimer->IgnoreMissingEPGCats();
+  avoidrepeats = searchtimer->AvoidRepeats();
+  allowedrepeats =  searchtimer->AllowedRepeats();
+  repeatswithindays = searchtimer->RepeatsWithinDays();
+  comparetitle = searchtimer->CompareTitle();
+  comparesubtitle = searchtimer->CompareSubtitle();
+  comparesummary = searchtimer->CompareSummary();
+  comparesummarymatchinpercent = searchtimer->CompareSummaryMatchInPercent();
+  comparedate = searchtimer->CompareDate();
+  contentsFilter = searchtimer->ContentsFilter();     // no part of form, thus camelCase
+  for (unsigned int i = 0; i < extEPGInfos.size(); i++)
+  {
+    bool selected = searchtimer->CompareCategories() & (1<<i);
+    avoidrepeatscatselected.push_back(selected);
+  }
+  priority = searchtimer->Priority();
+  lifetime = searchtimer->Lifetime();
+  marginstart = searchtimer->MarginStart();
+  marginstop = searchtimer->MarginStop();
+  usevps = searchtimer->UseVPS();
+  delmode = searchtimer->DelMode();
+  delaftercountrecs = searchtimer->DelAfterCountRecs();
+  delafterdaysoffirstrec = searchtimer->DelAfterDaysOfFirstRec();
 </%cpp>
 <& pageelems.doc_type &>
 <html>
@@ -422,28 +393,27 @@ const char *TNT_ARRAY = "";
     <script type="text/javascript">
     function initform()
     {
-      var gid;
       changedsearchmode(document.getElementById("search_mode"));
       changedchannelmode(document.getElementById("channel_mode"));
       changedusetime(document.getElementById("usetime"));
       changeduseduration(document.getElementById("useduration"));
       changeduseweekday(document.getElementById("useweekday"));
-      changeduseassearchtimer(document.getElementById("useassearchtimer"));
-      for (gid = 0; gid < <$ contentGroups $>; gid++ ) {
-        let hexID = gid.toString(16) + "0";
+      for (let gid = 0; gid < <$ contentGroups $>; gid++ ) {
+        const hexID = gid.toString(16) + "0";
         changedusecontentgroup(document.getElementById("usecontentgroup" + hexID));
       }
       changedusecontentids(document.getElementById("usecontentids"));
 %     if (extEPGInfos.size() > 0) {
         changeduseextepginfo(document.getElementById("useextepginfo"));
 %     }
+      changedblacklistmode(document.getElementById("blacklistmode"));
+      changeduseassearchtimer(document.getElementById("useassearchtimer"));
       changedavoidrepeats(document.getElementById("avoidrepeats"));
       changedcomparesummary(document.getElementById("comparesummary"));
-      changedblacklistmode(document.getElementById("blacklistmode"));
       changeddelmode(document.getElementById("delmode"));
     }
 
-    function checksearch()
+    function checksearchterm()
     {
       if (document.getElementById("searchterm").value.length <= 3)
         return confirm('<$ tr("Search text too short - use anyway?") $>');
@@ -452,13 +422,21 @@ const char *TNT_ARRAY = "";
 
     function changedsearchmode(selection)
     {
-      document.getElementById("tolerance").style.display = (selection.options[selection.selectedIndex].value == 5 ? "revert-layer" : "none");
+      const tolerance = document.getElementById("tolerance");
+      if (selection.options[selection.selectedIndex].value == 5) {
+        tolerance.style.display = "revert-layer";
+        tolerance.disabled = false;
+      } else {
+        tolerance.style.display = "none";
+        tolerance.disabled = true;
+      }
     }
 
     function changedchannelmode(selection)
     {
-      document.getElementById("channelinterval").style.display = (selection.options[selection.selectedIndex].value == 1 ? "revert-layer" : "none");
-      document.getElementById("channelgroup").style.display = (selection.options[selection.selectedIndex].value == 2 ? "revert-layer" : "none");
+      const value = selection.options[selection.selectedIndex].value;
+      document.getElementById("channelinterval").style.display = (value == 1 ? "revert-layer" : "none");
+      document.getElementById("channelgroup").style.display = (value == 2 ? "revert-layer" : "none");
     }
 
     function changedusetime(selection)
@@ -468,35 +446,23 @@ const char *TNT_ARRAY = "";
 
     function changeduseduration(selection)
     {
-      document.getElementById("durationsettings").style.display = (selection.checked ? "revert-layer" : "none");
+      const durationSettings = document.getElementById("durationsettings");
+      if (selection.checked) {
+        durationSettings.style.display = "revert-layer";
+        for (const input of durationSettings.getElementsByTagName("input")) {
+          input.disabled = false;
+        }
+      } else {
+        durationSettings.style.display = "none";
+        for (const input of durationSettings.getElementsByTagName("input")) {
+          input.disabled = true;
+        }
+      }
     }
 
     function changeduseweekday(selection)
     {
       document.getElementById("weekdaysettings").style.display = (selection.checked ? "revert-layer" : "none");
-    }
-
-    function changeduseassearchtimer(selection)
-    {
-      document.getElementById("searchtimermodesettings").style.display =
-        (selection.options[selection.selectedIndex].value > 0) ? "revert-layer" : "none";
-      document.getElementById("useassearchtimeruserdef").style.display =
-        (selection.options[selection.selectedIndex].value == 2) ? "revert-layer" : "none";
-      changedsearchtimermode(document.getElementById("searchtimer_mode"));
-    }
-
-    function changedsearchtimermode(selection)
-    {
-      document.getElementById("searchtimermode1settings").style.display =
-        ((selection.options[selection.selectedIndex].value == 0 ||
-          selection.options[selection.selectedIndex].value == 5) &
-        document.getElementById("useassearchtimer").options[document.getElementById("useassearchtimer").selectedIndex].value > 0) ?
-        "revert-layer" : "none";
-      document.getElementById("searchtimermode3settings").style.display =
-        ((selection.options[selection.selectedIndex].value == 2 ||
-          selection.options[selection.selectedIndex].value == 3) &
-        document.getElementById("useassearchtimer").options[document.getElementById("useassearchtimer").selectedIndex].value > 0) ?
-        "revert-layer" : "none";
     }
 
     function changedusecontentids(selection)
@@ -507,8 +473,8 @@ const char *TNT_ARRAY = "";
     function changedusecontentgroup(selection)
     {
       if (selection !== null) {
-        let gid = selection.id.slice(-2);
-        let group = document.getElementById("content_group_" + gid);
+        const gid = selection.id.slice(-2);
+        const group = document.getElementById("content_group_" + gid);
         if (group !== null) {
           group.style.display = (selection.checked ? "revert-layer" : "none");
         }
@@ -517,33 +483,26 @@ const char *TNT_ARRAY = "";
 
     function changeduseextepginfo(selection)
     {
-      var doc = document.getElementById("use_extepg_settings");
-      if (doc) doc.style.display = (selection.checked ? "revert-layer" : "none");
+      const useExtEpgSettings = document.getElementById("use_extepg_settings");
+      if (useExtEpgSettings) useExtEpgSettings.style.display = (selection.checked ? "revert-layer" : "none");
     }
 
     function changedextepginfo(selection)
     {
-      var i;
-      document.getElementById(selection.name + "_value").value = "";
-      for (i = 0; i < selection.length; i++)
+      const extEpg = selection.id.replace(/_option_.*$/, "_");
+      const input = document.getElementById(extEpg + "value");
+      input.value = "";
+      for (let i = 0; true; i++)
       {
-        if (selection.options[i].selected)
+        const option = document.getElementById(extEpg + "option_" + i);
+        const label =  document.getElementById(extEpg + "label_" + i);
+        if (!option || !label) break;
+        if (option.checked)
         {
-        if (document.getElementById(selection.name + "_value").value != "")
-          document.getElementById(selection.name + "_value").value += ",";
-        document.getElementById(selection.name + "_value").value += selection.options[i].value;
+          if (input.value) input.value += ",";
+          input.value += label.innerText;
         }
       }
-    }
-
-    function changedavoidrepeats(selection)
-    {
-      document.getElementById("avoidrepeatssettings").style.display = (selection.checked ? "revert-layer" : "none");
-    }
-
-    function changedcomparesummary(selection)
-    {
-      document.getElementById("summarymatchinpercent").style.display = (selection.checked ? "revert-layer" : "none");
     }
 
     function changedblacklistmode(selection)
@@ -552,18 +511,59 @@ const char *TNT_ARRAY = "";
         (selection.options[selection.selectedIndex].value == 1 ? "revert-layer" : "none");
     }
 
-    function changedblacklistsel(selection)
+    function changedblacklists(selection)
     {
-      var i;
-      document.getElementById("blacklistids_internal").value = "";
-      for (i = 0; i < selection.length; i++)
+      const base = selection.id.replace(/_.*$/, "_");
+      const input = document.getElementById("blacklistids");
+      input.value = "";
+      for (let i = 0; true; i++)
       {
-        if (selection.options[i].selected)
+        const blacklist = document.getElementById(base + i);
+        if (!blacklist) break;
+        if (blacklist.checked)
         {
-        if (document.getElementById("blacklistids_internal").value != "")
-          document.getElementById("blacklistids_internal").value += "|";
-        document.getElementById("blacklistids_internal").value += selection.options[i].value;
+          if (input.value) input.value += "|";
+          input.value += blacklist.name.replace(/^.*_(\\d+)$/, "$1");
         }
+      }
+    }
+
+    function changeduseassearchtimer(selection)
+    {
+      document.getElementById("searchtimeractionsettings").style.display =
+        (selection.options[selection.selectedIndex].value > 0) ? "revert-layer" : "none";
+      document.getElementById("useassearchtimeruserdef").style.display =
+        (selection.options[selection.selectedIndex].value == 2) ? "revert-layer" : "none";
+      changedsearchtimeraction(document.getElementById("searchtimeraction"));
+    }
+
+    function changedsearchtimeraction(selection)
+    {
+      const actionTimerSettings = document.getElementById("searchtimeraction05settings");
+      const useAsSearchTimer = document.getElementById("useassearchtimer");
+      const searchTimerMode = useAsSearchTimer.options[useAsSearchTimer.selectedIndex].value;
+      // settings if action is (in)active timer
+      let hidden = false;
+      if (searchTimerMode > 0 && ["0", "5"].includes(selection.options[selection.selectedIndex].value)) {
+          actionTimerSettings.style.display = "revert-layer";
+      } else {
+          actionTimerSettings.style.display = "none";
+          hidden = true;
+      }
+      for (const input of actionTimerSettings.getElementsByTagName("input")) {
+        if (input.type == "number") input.disabled = hidden;
+      }
+      changedavoidrepeats(document.getElementById("avoidrepeats"), hidden);
+      changeddelmode(document.getElementById("delmode"), hidden);
+      // settings if action is channel switching
+      const actionAnncouncementSettings = document.getElementById("searchtimeraction23settings");
+      const switchMinBefore = document.getElementById("switchminbefore");
+      if (searchTimerMode > 0 && ["2", "3"].includes(selection.options[selection.selectedIndex].value)) {
+        actionAnncouncementSettings.style.display = "revert-layer";
+        switchMinBefore.disabled = false;
+      } else {
+        actionAnncouncementSettings.style.display = "none";
+        switchMinBefore.disabled = true;
       }
     }
 
@@ -572,9 +572,50 @@ const char *TNT_ARRAY = "";
       document.getElementById("directory").value = selection.value;
     }
 
-    function changeddelmode(selection)
+    function changedavoidrepeats(selection, hidden)
     {
-      document.getElementById("delmodesettings").style.display = (selection.checked ? "revert-layer" : "none");
+      hidden ||= !selection.checked;
+      const avoidRepeatsSettings = document.getElementById("avoidrepeatssettings");
+      avoidRepeatsSettings.style.display = (selection.checked ? "revert-layer" : "none");
+      for (const input of avoidRepeatsSettings.getElementsByTagName("input")) {
+        if (input.type == "number") input.disabled = hidden;
+      }
+      changedcomparesummary(document.getElementById("comparesummary"), hidden);
+    }
+
+    function changedcomparesummary(selection, hidden)
+    {
+      const summaryMatchInPercent = document.getElementById("summarymatchinpercent");
+      const compareSummaryMatchInPercent = document.getElementById("comparesummarymatchinpercent");
+      if ((selection.checked && !hidden)) {
+        summaryMatchInPercent.style.display =  "revert-layer";
+        compareSummaryMatchInPercent.disabled = false;
+      } else {
+        summaryMatchInPercent.style.display =  "none";
+        compareSummaryMatchInPercent.disabled = true;
+      }
+    }
+
+    function changeddelmode(selection, hidden)
+    {
+      const delModeRecordings = document.getElementById("delmoderecordings");
+      const delAfterCountRecordings = document.getElementById("delaftercountrecs");
+      if (selection.value == 1 && !hidden) {
+        delModeRecordings.style.display = "revert-layer";
+        delAfterCountRecordings.disabled = false;
+      } else {
+        delModeRecordings.style.display = "none";
+        delAfterCountRecordings.disabled = true;
+      }
+      const delModeDays = document.getElementById("delmodedays");
+      const delAfterCountDays = document.getElementById("delafterdaysoffirstrec");
+      if (selection.value == 2 && !hidden) {
+        delModeDays.style.display = "revert-layer";
+        delAfterCountDays.disabled = false;
+      } else {
+        delModeDays.style.display = "none";
+        delAfterCountDays.disabled = true;
+      }
     }
     </script>
 
@@ -586,7 +627,7 @@ const char *TNT_ARRAY = "";
         <div class="spacebar"><# spacer with fade-out effect #></div>
         <form method="post" name="edit_searchtimer" action="edit_searchtimer.ecpp">
           <input type="hidden" name="searchtimerid" value="<$ searchtimerid $>"/>
-          <input type="hidden" name="blacklistids_internal" value="<$ blacklistids_internal $>" id="blacklistids_internal"/>
+          <input type="hidden" name="blacklistids" value="<$ blacklistids $>" id="blacklistids"/>
           <input type="hidden" name="nav_back" value="<$ nav_back $>"/>
           <table class="form" cellpadding="0" cellspacing="0">
             <tr class="head">
@@ -699,9 +740,9 @@ const char *TNT_ARRAY = "";
 %                           contentLabel.append(contentString);
                           <td class="label"><div class="withmargin"><$$ contentLabel $>:</div></td>
                           <td><input type="checkbox" name="usegid<$ hexID $>" value="1" <{ CHECKIF(groupID < contentIdentifiersPerGroup && filteredContentGroupIDs[groupID]) }> onclick="changedusecontentgroup(this)" id="usecontentgroup<$ hexID $>"/>
-                            <div class="options" id="content_group_<$ hexID $>">
+                            <div class="descriptors options" id="content_group_<$ hexID $>">
 %                     }
-                              <div class="dotted"><# line in EPGsearch, the groupID is the first item for selection #>
+                              <div class="dotted"><# like in EPGsearch, the groupID is the first item for selection #>
                                 <input type="checkbox" name="cid<$ hexID $>" value="1" <{ CHECKIF(contentID < contentIdentifiers && filteredContentIDs[contentID]) }> onclick="" id="cid<$ hexID $>"/>
                                 <label for="cid<$ hexID $>"><$$ contentString $></label>
                               </div>
@@ -725,29 +766,33 @@ const char *TNT_ARRAY = "";
                 <input type="checkbox" name="useextepginfo" value="1" <{ CHECKIF(useextepginfo) }> onclick="changeduseextepginfo(this)" id="useextepginfo"/>
                 <div id="use_extepg_settings" style="display: none">
                   <table class="dependent" border="0" cellspacing="0" cellpadding="0">
-%                 int i = 0; for (ExtEPGInfos::iterator extinfo = extEPGInfos.begin(); extinfo != extEPGInfos.end(); ++extinfo, i++) {
+                    <!-- Extended EPG categories -->
+%                   int i = 0; for (ExtEPGInfos::iterator extinfo = extEPGInfos.begin(); extinfo != extEPGInfos.end(); ++extinfo, i++) {
                     <tr>
                       <td class="label"><div class="withmargin"><$ extinfo->Name() $>:</div></td>
-                      <td><input type="text" name="extepgvalues<$TNT_ARRAY$>" value="<$extepgvalues[i]$>" size="20" id="extepg_<{ reply.out() << extinfo->Id(); }>_value"/></td>
-%                     if (extinfo->Values().size() > 0) {
+                      <# EPGsearch returns a one-element list with an empty string for text-type categories #>
+%                     bool isTextCategory = extinfo->Values().size() == 0 || (extinfo->Values().size() == 1 && extinfo->Values()[0].empty());
+%                     cToSvConcat<16> id("extepg_");
+%                     id.appendInt<1>(extinfo->Id());
                       <td>
-                        <select size="3" multiple="multiple" name="extepg_<{ reply.out() << extinfo->Id(); }>" onchange="changedextepginfo(this)">
-%                       for (unsigned int j = 0; j < extinfo->Values().size(); j++) {
-                          <option value="<{ reply.out() << extinfo->Values()[j]; }>"
-%                         if (extinfo->Selected(j, extepgvalues[i])) {
-                            selected="selected"
+                        <input type="text" name="extepgvalues<$TNT_ARRAY$>" value="<$extepgvalues[i]$>" size="20" id="<$ id $>_value" <?? !isTextCategory ? " hidden=\"1\" readonly=\"1\"" ?> />
+%                       if (!isTextCategory) {
+                          <div class="categories options">
+%                         for (unsigned int j = 0; j < extinfo->Values().size(); j++) {
+                            <div class="dotted">
+                              <input type="checkbox" id="<$ id $>_option_<$ j $>" name="<$ id $>_option" value="1" <{ CHECKIF(extinfo->Selected(j, extepgvalues[i])) }> onchange="changedextepginfo(this)" />
+                              <label id="<$ id $>_label_<$ j $>" for="<$ id $>_<$ j $>"><$ extinfo->Values()[j] $></label>
+                            </div>
 %                         }
-                          > <{ reply.out() << extinfo->Values()[j]; }> </option>
+                          </div>
 %                       }
-                        </select>
                       </td>
-%                     }
                     </tr>
 %                   }
 
                     <!-- Ignore missing EPG categories -->
                     <tr>
-                      <td><div class="options">
+                      <td colspan="2"><div class="options">
                         <div class="dotted">
                           <input type="checkbox" name="ignoreMissingEPGCats" value="1" <{ CHECKIF(ignoreMissingEPGCats) }> />
                           <label for="ignoreMissingEPGCats"><$ tr("Ignore missing EPG info") $> </label>
@@ -867,17 +912,23 @@ const char *TNT_ARRAY = "";
               <td class="label leftcol"><div class="withmargin"><$ tr("Use blacklists" ) $>:</div></td>
               <td class="rightcol">
                 <select onchange="changedblacklistmode(this)" name="blacklistmode" size="1" id="blacklistmode">
-                  <option value="0" <{ SELECTIF(blacklistmode == 0) }> ><$ trVDR("no") $></option>
+                  <option value="3" <{ SELECTIF(blacklistmode == 3) }> ><$ trVDR("no") $></option>
+                  <option value="0" <{ SELECTIF(blacklistmode == 0) }> ><$ tr("only global") $></option>
                   <option value="1" <{ SELECTIF(blacklistmode == 1) }> ><$ tr("Selection") $></option>
                   <option value="2" <{ SELECTIF(blacklistmode == 2) }> ><$ tr("all") $></option>
                 </select>
                 <div class="dependent" id="blacklistmodesettings" style="display: none">
 %               if (blacklists.size() > 0) {
-                  <select name="blacklists" multiple="multiple" size="5" onchange="changedblacklistsel(this)">
+                  <div class="blacklists options">
 %                 int i = 0; for (Blacklists::iterator blacklist = blacklists.begin(); blacklist != blacklists.end(); ++blacklist, i++) {
-                    <option value="<$ blacklist->Id() $>" <{ SELECTIF(editsearchtimer && editsearchtimer->BlacklistSelected(blacklist->Id())) }>><$ blacklist->Search() $></option>
+%                   cToSvConcat<16> id("blacklist_");
+%                   id.appendInt<1>(i);
+                    <div class="dotted">
+                      <input type="checkbox" id="<$ id $>" name="<$ id $>_<$ blacklist->Id() $>" value="1" <{ CHECKIF(searchtimer && searchtimer->BlacklistSelected(blacklist->Id())) }> onchange="changedblacklists(this)" />
+                      <label for="<$ id $>"><$ blacklist->Search() $></label>
+                    </div>
 %                 }
-                  </select>
+                  </div>
 %               }
                 </div>
               </td>
@@ -912,8 +963,8 @@ const char *TNT_ARRAY = "";
                     </tr>
                   </table>
                 </div>
-                <div id="searchtimermodesettings" style="display: none">
-                  <select onchange="changedsearchtimermode(this)" name="searchtimeraction" size="1" id="searchtimer_mode">
+                <div id="searchtimeractionsettings" style="display: none">
+                  <select onchange="changedsearchtimeraction(this)" name="searchtimeraction" size="1" id="searchtimeraction">
                     <option value="0" <{ SELECTIF(searchtimeraction == 0) }> ><$ tr("Record") $></option>
                     <option value="1" <{ SELECTIF(searchtimeraction == 1) }> ><$ tr("Announce only") $></option>
                     <option value="2" <{ SELECTIF(searchtimeraction == 2) }> ><$ tr("Switch only") $></option>
@@ -922,7 +973,7 @@ const char *TNT_ARRAY = "";
                     <option value="5" <{ SELECTIF(searchtimeraction == 5) }> ><$ tr("Inactive Record") $></option>
                   </select>
                 </div>
-                <div id="searchtimermode1settings" style="display: none">
+                <div id="searchtimeraction05settings" style="display: none">
                   <table class="dependent" border="0" cellpadding="0" cellspacing="0">
                     <tr>
                       <td class="label"><div class="withmargin"><$ tr("Series recording") $>:</div></td>
@@ -988,7 +1039,7 @@ const char *TNT_ARRAY = "";
                                 <# value is restricted in EPGsearch #>
                                 <span id="summarymatchinpercent" style="display: none">
                                   <$ tr("Match in percent" ) $>:
-                                  <input type="number" min="1" max="100" name="comparesummarymatchinpercent" size="6" value="<$ comparesummarymatchinpercent $>" id="summarymatchinpercent">
+                                  <input type="number" min="1" max="100" name="comparesummarymatchinpercent" id="comparesummarymatchinpercent" size="6" value="<$ comparesummarymatchinpercent $>">
                                 </span>
                               </td>
                             </tr>
@@ -1043,29 +1094,26 @@ const char *TNT_ARRAY = "";
                     </tr>
                     <tr>
                       <td class="label"><div class="withmargin"><$ tr("Auto-delete search timer") $>:</div></td>
-                      <td><input type="checkbox" name="delmode" value="1" <{ CHECKIF(delmode) }> onclick="changeddelmode(this)" id="delmode"/>
-                      <div id="delmodesettings" style="display: none">
-                        <table class="dependent" border="0" cellpadding="0" cellspacing="0" class="dependent">
-                          <tr>
-                            <td class="label"><div class="withmargin"><$ tr("after ... recordings") $>:</div></td>
-                            <td>
-                              <input type="number" min="0" max="999" size="6" name="delaftercountrecs" value="<$ delaftercountrecs $>" />
-                            </td>
-                          </tr>
-                          <tr>
-                            <td class="label"><div class="withmargin"><$ tr("after ... days after first rec.") $>:</div></td>
-                            <td>
-                              <input type="number" min="0" max="999" size="6" name="delafterdaysoffirstrec" value="<$ delafterdaysoffirstrec $>" />
-                            </td>
-                          </tr>
-                        </table>
-                      </div>
+                      <td>
+                        <select onchange="changeddelmode(this)" name="delmode" size="1" id="delmode">
+                          <option value="0" <{ SELECTIF(delmode == 0) }> ><$ trVDR("no") $></option>
+                          <option value="1" <{ SELECTIF(delmode == 1) }> ><$ tr("based on recordings") $></option>
+                          <option value="2" <{ SELECTIF(delmode == 2) }> ><$ tr("based on days") $></option>
+                        </select>
+                        <div id="delmoderecordings" style="display: none">
+                          <span class="label"><$ tr("after ... recordings") $>:</span>
+                          <input type="number" min="0" max="999" size="6" name="delaftercountrecs" id="delaftercountrecs" value="<$ delaftercountrecs $>" />
+                        </div>
+                        <div id="delmodedays" style="display: none">
+                          <span class="label"><$ tr("after ... days after first rec.") $>:</span>
+                          <input type="number" min="0" max="999" size="6" name="delafterdaysoffirstrec" id="delafterdaysoffirstrec" value="<$ delafterdaysoffirstrec $>" />
+                        </div>
                       </td>
                     </tr>
                   </table>
                 </div>
 
-                <div id="searchtimermode3settings" style="display: none">
+                <div id="searchtimeraction23settings" style="display: none">
                   <table class="dependent" border="0" cellpadding="0" cellspacing="0">
                     <tr>
                       <td class="label"><div class="withmargin"><$ tr("Switch ... minutes before start") $>:</div></td>
@@ -1084,16 +1132,18 @@ const char *TNT_ARRAY = "";
             <tr>
               <td class="buttonpanel leftcol rightcol bottomrow" colspan="2">
                 <div class="submission">
-                  <div class="warning"><# supply at least an empty element to force buttons at right-column border #>
-%                 if (hasInsufficientFields) {
-                    <$ tr("The searchtimer lacks some form fields, so that their values cannot be saved. Please upgrade to the most recent version of EPGsearch.") $>
-%                 } else if (hasUnknownFields) {
-                    <$ tr("The searchtimer includes extra fields. These will be saved with their original values.") $>
+                  <div class="warning"><span id="compatibility">
+%                 if (searchtimers.begin() != searchtimers.end()) {
+%                   if (searchtimers.begin()->HasInsufficientFields()) {
+                      <$ tr("The searchtimer lacks some form fields, so that their values cannot be saved. Please upgrade to the most recent version of EPGsearch.") $>
+%                   } else if (searchtimers.begin()->HasUnknownFields()) {
+                      <$ tr("The searchtimer includes extra fields. These will be saved with their original values.") $>
+%                   }
 %                 }
-                  </div>
+                  </span></div>
                   <div class="buttons">
-                    <button class="green" type="submit" name="test" value="test" onclick="return checksearch();"><$ tr("Test") $></button>
-                    <button class="green" type="submit" name="save" onclick="return checksearch();"><$ tr("Save") $></button>
+                    <button class="green" type="submit" name="test" value="test" onclick="return checksearchterm();"><$ tr("Test") $></button>
+                    <button class="green" type="submit" name="save" onclick="return checksearchterm();"><$ tr("Save") $></button>
                     <button type="button" class="red" onclick="history.go(<$-nav_back$>)"><$ tr("Cancel") $></button>
                   </div>
                 </div>

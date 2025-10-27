@@ -39,10 +39,10 @@ using namespace vdrlive;
   bool wday_fri = false;
   bool wday_sat = false;
   bool wday_sun = false;
-  int blacklistmode = 0;
+  int blacklistmode = 3;
   bool useextepginfo = false;
   std::string extepgvalues[];
-  std::string blacklistids_internal;
+  std::string blacklistids;
   bool ignoreMissingEPGCats = false;
 </%args>
 <%session scope="global">
@@ -52,8 +52,6 @@ bool logged_in(false);
 ExtEPGInfos extEPGInfos;
 ChannelGroups channelGroups;
 Blacklists blacklists;
-bool hasInsufficientFields = false;
-bool hasUnknownFields = false;
 std::string contentsFilter;
 </%request>
 <%include>page_init.eh</%include>
@@ -159,7 +157,7 @@ const char *TNT_ARRAY = "";
     }
     searchtimer.SetBlacklistMode(blacklistmode);
     if (blacklistmode == 1)
-      searchtimer.ParseBlacklist(blacklistids_internal);
+      searchtimer.ParseBlacklist(blacklistids);
     searchtimer.SetId(0);
     std::string md5 = SearchResults::AddQuery(searchtimer.ToText());
 </%cpp>
@@ -170,13 +168,6 @@ const char *TNT_ARRAY = "";
   </script>
 </html>
 <%cpp>
-  }
-  SearchTimer* searchtimer;
-  // get an existing search timer for detemining the compatibility flags
-  searchtimer = &*searchtimers.begin();
-  if (searchtimer) {
-    hasInsufficientFields = searchtimer->HasInsufficientFields();
-    hasUnknownFields = searchtimer->HasUnknownFields();
   }
   for (unsigned int i = 0; i < extEPGInfos.size(); i++)
     extepgvalues.push_back("");
@@ -195,15 +186,14 @@ const char *TNT_ARRAY = "";
     <script type="text/javascript">
     function initform()
     {
-      var gid;
       changeduseextendedsearch(document.getElementById("useextendedsearch"));
       changedsearchmode(document.getElementById("search_mode"));
       changedchannelmode(document.getElementById("channel_mode"));
       changedusetime(document.getElementById("usetime"));
       changeduseduration(document.getElementById("useduration"));
       changeduseweekday(document.getElementById("useweekday"));
-      for (gid = 0; gid < <$ contentGroups $>; gid++ ) {
-        let hexID = gid.toString(16) + "0";
+      for (let gid = 0; gid < <$ contentGroups $>; gid++ ) {
+        const hexID = gid.toString(16) + "0";
         changedusecontentgroup(document.getElementById("usecontentgroup" + hexID));
       }
       changedusecontentids(document.getElementById("usecontentids"));
@@ -213,7 +203,7 @@ const char *TNT_ARRAY = "";
       changedblacklistmode(document.getElementById("blacklistmode"));
     }
 
-    function checksearch()
+    function checksearchterm()
     {
       if (document.getElementById("searchterm").value.length <= 3)
         return confirm('<$ tr("Search text too short - use anyway?") $>');
@@ -228,13 +218,21 @@ const char *TNT_ARRAY = "";
 
     function changedsearchmode(selection)
     {
-      document.getElementById("tolerance").style.display = (selection.options[selection.selectedIndex].value == 5 ? "revert-layer" : "none");
+      const tolerance = document.getElementById("tolerance");
+      if (selection.options[selection.selectedIndex].value == 5) {
+        tolerance.style.display = "revert-layer";
+        tolerance.disabled = false;
+      } else {
+        tolerance.style.display = "none";
+        tolerance.disabled = true;
+      }
     }
 
     function changedchannelmode(selection)
     {
-      document.getElementById("channelinterval").style.display = (selection.options[selection.selectedIndex].value == 1 ? "revert-layer" : "none");
-      document.getElementById("channelgroup").style.display = (selection.options[selection.selectedIndex].value == 2 ? "revert-layer" : "none");
+      const value = selection.options[selection.selectedIndex].value;
+      document.getElementById("channelinterval").style.display = (value == 1 ? "revert-layer" : "none");
+      document.getElementById("channelgroup").style.display = (value == 2 ? "revert-layer" : "none");
     }
 
     function changedusetime(selection)
@@ -244,7 +242,18 @@ const char *TNT_ARRAY = "";
 
     function changeduseduration(selection)
     {
-      document.getElementById("durationsettings").style.display = (selection.checked ? "revert-layer" : "none");
+      const durationSettings = document.getElementById("durationsettings");
+      if (selection.checked) {
+        durationSettings.style.display = "revert-layer";
+        for (const input of durationSettings.getElementsByTagName("input")) {
+          input.disabled = false;
+        }
+      } else {
+        durationSettings.style.display = "none";
+        for (const input of durationSettings.getElementsByTagName("input")) {
+          input.disabled = true;
+        }
+      }
     }
 
     function changeduseweekday(selection)
@@ -260,8 +269,8 @@ const char *TNT_ARRAY = "";
     function changedusecontentgroup(selection)
     {
       if (selection !== null) {
-        let gid = selection.id.slice(-2);
-        let group = document.getElementById("content_group_" + gid);
+        const gid = selection.id.slice(-2);
+        const group = document.getElementById("content_group_" + gid);
         if (group !== null) {
           group.style.display = (selection.checked ? "revert-layer" : "none");
         }
@@ -270,21 +279,24 @@ const char *TNT_ARRAY = "";
 
     function changeduseextepginfo(selection)
     {
-      var doc = document.getElementById("use_extepg_settings");
-      if (doc) doc.style.display = (selection.checked ? "revert-layer" : "none");
+      const useExtEpgSettings = document.getElementById("use_extepg_settings");
+      if (useExtEpgSettings) useExtEpgSettings.style.display = (selection.checked ? "revert-layer" : "none");
     }
 
     function changedextepginfo(selection)
     {
-      var i;
-      document.getElementById(selection.name + "_value").value = "";
-      for (i = 0; i < selection.length; i++)
+      const extEpg = selection.id.replace(/_option_.*$/, "_");
+      const input = document.getElementById(extEpg + "value");
+      input.value = "";
+      for (let i = 0; true; i++)
       {
-        if (selection.options[i].selected)
+        const option = document.getElementById(extEpg + "option_" + i);
+        const label =  document.getElementById(extEpg + "label_" + i);
+        if (!option || !label) break;
+        if (option.checked)
         {
-        if (document.getElementById(selection.name + "_value").value != "")
-          document.getElementById(selection.name + "_value").value += ",";
-        document.getElementById(selection.name + "_value").value += selection.options[i].value;
+          if (input.value) input.value += ",";
+          input.value += label.innerText;
         }
       }
     }
@@ -295,17 +307,19 @@ const char *TNT_ARRAY = "";
         (selection.options[selection.selectedIndex].value == 1 ? "revert-layer" : "none");
     }
 
-    function changedblacklistsel(selection)
+    function changedblacklists(selection)
     {
-      var i;
-      document.getElementById("blacklistids_internal").value = "";
-      for (i = 0; i < selection.length; i++)
+      const base = selection.id.replace(/_.*$/, "_");
+      const input = document.getElementById("blacklistids");
+      input.value = "";
+      for (let i = 0; true; i++)
       {
-        if (selection.options[i].selected)
+        const blacklist = document.getElementById(base + i);
+        if (!blacklist) break;
+        if (blacklist.checked)
         {
-        if (document.getElementById("blacklistids_internal").value != "")
-          document.getElementById("blacklistids_internal").value += "|";
-        document.getElementById("blacklistids_internal").value += selection.options[i].value;
+          if (input.value) input.value += "|";
+          input.value += blacklist.name.replace(/^.*_(\\d+)$/, "$1");
         }
       }
     }
@@ -318,7 +332,7 @@ const char *TNT_ARRAY = "";
     <div id="content">
       <div class="spacebar"><# spacer with fade-out effect #></div>
       <form method="post" name="searchepg" action="searchepg.ecpp">
-        <input type="hidden" name="blacklistids_internal" value="<$ blacklistids_internal $>" id="blacklistids_internal"/>
+        <input type="hidden" name="blacklistids" value="<$ blacklistids $>" id="blacklistids"/>
         <table class="form" cellpadding="0" cellspacing="0">
           <tr class="head">
             <td  class="toprow leftcol rightcol" colspan="2"><div class="boxheader"><div class="caption"><$ tr("Search settings") $></div></div></td>
@@ -436,9 +450,9 @@ const char *TNT_ARRAY = "";
 %                           contentLabel.append(contentString);
                           <td class="label"><div class="withmargin"><$$ contentLabel $>:</div></td>
                           <td><input type="checkbox" name="usegid<$ hexID $>" value="1" <{ CHECKIF(groupID < contentIdentifiersPerGroup && filteredContentGroupIDs[groupID]) }> onclick="changedusecontentgroup(this)" id="usecontentgroup<$ hexID $>"/>
-                            <div class="options" id="content_group_<$ hexID $>">
+                            <div class="descriptors options" id="content_group_<$ hexID $>">
 %                     }
-                              <div class="dotted"><# line in EPGsearch, the groupID is the first item for selection #>
+                              <div class="dotted"><# like in EPGsearch, the groupID is the first item for selection #>
                                 <input type="checkbox" name="cid<$ hexID $>" value="1" <{ CHECKIF(contentID < contentIdentifiers && filteredContentIDs[contentID]) }> onclick="" id="cid<$ hexID $>"/>
                                 <label for="cid<$ hexID $>"><$$ contentString $></label>
                               </div>
@@ -462,29 +476,33 @@ const char *TNT_ARRAY = "";
                 <input type="checkbox" name="useextepginfo" value="1" <{ CHECKIF(useextepginfo) }> onclick="changeduseextepginfo(this)" id="useextepginfo"/>
                 <div id="use_extepg_settings" style="display: none">
                   <table class="dependent" border="0" cellspacing="0" cellpadding="0">
-%                 int i = 0; for (ExtEPGInfos::iterator extinfo = extEPGInfos.begin(); extinfo != extEPGInfos.end(); ++extinfo, i++) {
+                    <!-- Extended EPG categories -->
+%                   int i = 0; for (ExtEPGInfos::iterator extinfo = extEPGInfos.begin(); extinfo != extEPGInfos.end(); ++extinfo, i++) {
                     <tr>
                       <td class="label"><div class="withmargin"><$ extinfo->Name() $>:</div></td>
-                      <td><input type="text" name="extepgvalues<$TNT_ARRAY$>" value="<$extepgvalues[i]$>" size="20" id="extepg_<{ reply.out() << extinfo->Id(); }>_value"/></td>
-%                     if (extinfo->Values().size() > 0) {
+                      <# EPGsearch returns a one-element list with an empty string for text-type categories #>
+%                     bool isTextCategory = extinfo->Values().size() == 0 || (extinfo->Values().size() == 1 && extinfo->Values()[0].empty());
+%                     cToSvConcat<16> id("extepg_");
+%                     id.appendInt<1>(extinfo->Id());
                       <td>
-                        <select size="3" multiple="multiple" name="extepg_<{ reply.out() << extinfo->Id(); }>" onchange="changedextepginfo(this)">
-%                       for (unsigned int j = 0; j < extinfo->Values().size(); j++) {
-                          <option value="<{ reply.out() << extinfo->Values()[j]; }>"
-%                         if (extinfo->Selected(j, extepgvalues[i])) {
-                            selected="selected"
+                        <input type="text" name="extepgvalues<$TNT_ARRAY$>" value="<$extepgvalues[i]$>" size="20" id="<$ id $>_value" <?? !isTextCategory ? " hidden=\"1\" readonly=\"1\"" ?> />
+%                       if (!isTextCategory) {
+                          <div class="categories options">
+%                         for (unsigned int j = 0; j < extinfo->Values().size(); j++) {
+                            <div class="dotted">
+                              <input type="checkbox" id="<$ id $>_option_<$ j $>" name="<$ id $>_option" value="1" <{ CHECKIF(extinfo->Selected(j, extepgvalues[i])) }> onchange="changedextepginfo(this)" />
+                              <label id="<$ id $>_label_<$ j $>" for="<$ id $>_<$ j $>"><$ extinfo->Values()[j] $></label>
+                            </div>
 %                         }
-                          > <{ reply.out() << extinfo->Values()[j]; }> </option>
+                          </div>
 %                       }
-                        </select>
-                      </td>
-%                     }
+                        </td>
                     </tr>
 %                   }
 
                     <!-- Ignore missing EPG categories -->
                     <tr>
-                      <td><div class="options">
+                      <td colspan="2"><div class="options">
                         <div class="dotted">
                           <input type="checkbox" name="ignoreMissingEPGCats" value="1" <{ CHECKIF(ignoreMissingEPGCats) }> />
                           <label for="ignoreMissingEPGCats"><$ tr("Ignore missing EPG info") $> </label>
@@ -604,17 +622,23 @@ const char *TNT_ARRAY = "";
               <td class="label"><div class="withmargin"><$ tr("Use blacklists" ) $>:</div></td>
               <td>
                 <select onchange="changedblacklistmode(this)" name="blacklistmode" size="1" id="blacklistmode">
-                  <option value="0" <{ SELECTIF(blacklistmode == 0) }> ><$ trVDR("no") $></option>
+                  <option value="3" <{ SELECTIF(blacklistmode == 3) }> ><$ trVDR("no") $></option>
+                  <option value="0" <{ SELECTIF(blacklistmode == 0) }> ><$ tr("only global") $></option>
                   <option value="1" <{ SELECTIF(blacklistmode == 1) }> ><$ tr("Selection") $></option>
                   <option value="2" <{ SELECTIF(blacklistmode == 2) }> ><$ tr("all") $></option>
                 </select>
                 <div class="dependent" id="blacklistmodesettings" style="display: none">
 %               if (blacklists.size() > 0) {
-                  <select name="blacklists" multiple="multiple" size="5" onchange="changedblacklistsel(this)">
+                  <div class="blacklists options">
 %                 int i = 0; for (Blacklists::iterator blacklist = blacklists.begin(); blacklist != blacklists.end(); ++blacklist, i++) {
-                    <option value="<$ blacklist->Id() $>" <{ SELECTIF(searchtimer && searchtimer->BlacklistSelected(blacklist->Id())) }>><$ blacklist->Search() $></option>
+%                   cToSvConcat<16> id("blacklist_");
+%                   id.appendInt<1>(i);
+                    <div class="dotted">
+                      <input type="checkbox" id="<$ id $>" name="<$ id $>_<$ blacklist->Id() $>" value="1" onchange="changedblacklists(this)" />
+                      <label for="<$ id $>"><$ blacklist->Search() $></label>
+                    </div>
 %                 }
-                  </select>
+                  </div>
 %               }
                 </div>
               </td>
@@ -628,14 +652,16 @@ const char *TNT_ARRAY = "";
             <td class="buttonpanel leftcol rightcol bottomrow" colspan="2">
               <div class="submission">
                 <div class="warning"><span id="compatibility">
-%               if (hasInsufficientFields) {
-                  <$ tr("The search lacks some form fields, so that their values cannot be used for searching the EPG. Please upgrade to the most recent version of EPGsearch.") $>
-%               } else if (hasUnknownFields) {
-                  <$ tr("The search supports extra fields. These will be not be taken into account.") $>
+%               if (searchtimers.begin() != searchtimers.end()) {
+%                 if (searchtimers.begin()->HasInsufficientFields()) {
+                    <$ tr("The search lacks some form fields, so that their values cannot be used for searching the EPG. Please upgrade to the most recent version of EPGsearch.") $>
+%                 } else if (searchtimers.begin()->HasUnknownFields()) {
+                    <$ tr("The search supports extra fields. These will be not be taken into account.") $>
+%                 }
 %               }
                 </span></div>
                 <div class="buttons">
-                  <button class="green" type="submit" name="save" onclick="return checksearch();"><$ tr("Search") $></button>
+                  <button class="green" type="submit" name="save" onclick="return checksearchterm();"><$ tr("Search") $></button>
                 </div>
               </div>
             </td>

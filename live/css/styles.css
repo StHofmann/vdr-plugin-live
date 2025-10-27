@@ -885,6 +885,9 @@ div.cast_crew.tabular {
 }
 
 .ok-info-body {
+  display: flex;
+  column-gap: var(--icon-column-gap);
+  align-items: center;
   margin: var(--popup-body-margin);
 }
 
@@ -913,6 +916,9 @@ div.cast_crew.tabular {
 }
 
 .err-info-body {
+  display: flex;
+  column-gap: var(--icon-column-gap);
+  align-items: center;
   margin: var(--popup-body-margin);
 }
 
@@ -1401,7 +1407,7 @@ div#infobox div.st_controls div#infobox_channel_buttons {
 
 button {
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   flex-flow: column;
   justify-content: center;
   align-items: center;
@@ -1809,8 +1815,12 @@ table.listing tr.recording a {
   color: var(--listing-color-highlight);
 }
 
-table.listing tr div.state {
+table.listing tr td div.state_conflict {
   line-height: 0px;     /* to keep the block as small as possible */
+}
+table.listing tr td div.state {
+  line-height: 0px;     /* to keep the block as small as possible */
+  display: none;
 }
 
 table.listing tr.conflict div.state img,
@@ -2609,10 +2619,15 @@ select#channel_mode, div#channelgroup, div#blacklistmodesettings, select#useasse
 
 input#directory {
   margin-top: var(--text-line-gap);
-  margin-bottom: var(--xt-lin);
+  margin-bottom: var(--text-line-gap);
 }
 
 div#channelgroup, select#recordingdirsselection {
+  margin-bottom: calc(var(--text-line-gap) + 1px);
+}
+
+div#delmoderecordings, div#delmodedays {
+  margin-top: var(--text-line-gap);
   margin-bottom: calc(var(--text-line-gap) + 1px);
 }
 
