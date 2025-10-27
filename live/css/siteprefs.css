@@ -415,3 +415,13 @@ input, textarea, select {
 .osd div {
   font-family: "Lucida Console", "DejaVu Sans Mono", "Noto Mono", "Ubuntu Mono", "Courier New", Courier, monospace;
 }
+
+
+/* Uncomment this to receive warnings about compatibility issues with the
+** loaded EPGSearch plugin.
+*/
+/*
+table.form > tbody > tr > td div.warning span#compatibility {
+  display: unset;
+}
+*/
