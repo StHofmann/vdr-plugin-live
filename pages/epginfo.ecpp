@@ -156,6 +156,7 @@ using namespace vdrlive;
   <div class="epg_content confirmation">
     <div class="about_head">
 <%cpp>
+    bool need_confirmation = true;
     auto obj_list = confirm->get_object_names(epgid);
     if (!obj_list.empty()) {
 </%cpp>
@@ -168,17 +169,19 @@ using namespace vdrlive;
         </ul>
       </div>
 %   } else {
-      <div class="prompt"><$ tr("Nothing selected!") $></div>
+%     std::string prompt = confirm->get_question(epgid);
+%     need_confirmation = !prompt.empty();
+      <div class="prompt"><$ need_confirmation ? prompt.c_str() : tr("Nothing selected!") $></div>
 %   }
     </div>
-%   if (confirm->m_warning) {
+%   if (need_confirmation && confirm->m_warning) {
       <div class="message warning"><$ tr(confirm->m_warning) $></div>
 %   }
     <form>
       <input type="hidden" name="history_num_back" value="<$ history_num_back $>" id="history_<$ epgid $>"\>
       <div class="about_section">
         <div class="tabular buttons">
-%         if (!obj_list.empty()) {
+%         if (need_confirmation) {
           <div class="about_left">
             <button id="confirm_<$ epgid $>" class="green" type="button" onclick="action_back('<$ epgid $>', <$ history_num_back $>)"><$confirm->get_prompt()$></button>
           </div>
