@@ -1,4 +1,5 @@
 #include "timers.h"
+#include "timerconflict.h"
 
 #include "exception.h"
 #include "tools.h"
@@ -115,7 +116,7 @@ namespace vdrlive {
       if (getAutoTimerReason.call(LiveSetup().GetPluginTvscraper()) ) {
         if (!getAutoTimerReason.createdByTvscraper) return "";
         if (getAutoTimerReason.recording) {
-          recID = concat("recording_", cToSvXxHash128(getAutoTimerReason.recording->FileName() ));
+          recID = concat("recording_", cToSvXxHash128(cSv(getAutoTimerReason.recording->FileName(), strlen(getAutoTimerReason.recording->FileName())-4) ));
           recName = std::move(getAutoTimerReason.recordingName);
           utf8_sanitize_string(recName);
           return std::move(getAutoTimerReason.reason);
@@ -505,6 +506,37 @@ namespace vdrlive {
     const cEvent *event = schedule->GetEvent(eventid);
 #endif
     return GetTimer(event, channel, Timers);
+  }
+
+  std::string TimerManager_DeleteConfirmationQuestion(cSv id) {
+    std::string tId = SortedTimers::DecodeDomId(id);
+    LOCK_TIMERS_READ;
+    const cTimer* timer = SortedTimers::GetByTimerId(tId, Timers);
+    if (timer) return std::string(cToSvFormatted(tr("Delete timer \"%s\"?"), timer->File() ));
+    return tr("Delete timer [timer name unavailable]?");
+  }
+  int TimerManager_DeleteTimer(cSv id, std::string &message) {
+    std::string tId = SortedTimers::DecodeDomId(id);
+    int timer_id;
+    const char *remote;
+    std::string name;
+    {
+      LOCK_TIMERS_READ;
+      const cTimer* timer = SortedTimers::GetByTimerId(tId, Timers);
+      if (!timer) {
+        message = concat("Error deleting timer: Couldn't find timer ID ", id);
+        return 1;
+      }
+      timer_id = timer->Id();
+      remote   = timer->Remote();
+      name = timer->File();
+    }
+    TimerManager().DelTimer(timer_id, remote);
+    TimerConflictNotifier timerNotifier;
+    timerNotifier.SetTimerModification();
+
+    message = concat("Sucessfully deleted timer ID ", id, " name ", name);
+    return 0;
   }
 
 } // namespace vdrlive

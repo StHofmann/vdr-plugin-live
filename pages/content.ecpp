@@ -1,8 +1,12 @@
 <%pre>
+// see also tntnet-3.0/framework/defcomp/fstatic.cpp
 
+#include <fstream>
 #include <setup.h>
-#include <filecache.h>
 #include <tntfeatures.h>
+#include <vdr/channels.h>
+#include <stringhelpers.h>
+#include "content.h"
 
 using namespace vdrlive;
 
@@ -10,48 +14,87 @@ using namespace vdrlive;
 <%session scope="global">
 bool logged_in(false);
 </%session>
+<%args>
+int thumb=0;  // 0:false, 1:true. If true, the image is aused as thumb and the size will be resuced according to --thumb_size
+</%args>
 <%cpp>
-std::string mime("image/png");
+std::string mime;
 if (request.getArgsCount() > 0) {
 #if TNT_MAPURL_NAMED_ARGS
   mime = request.getArg("mime-type");
 #else
   mime = request.getArg(0);
 #endif
-  // dsyslog("vdrlive::content found mime arg (%s)", mime.c_str());
+if (mime == "image/jpg")
+  mime = "image/jpeg";
+else if (mime == "image/svg")
+  mime = "image/svg+xml";
+} else  {
+mime = "image/png";
+dsyslog("vdrlive::content.ecpp called without args");
 }
-reply.setContentType(mime);
-// dsyslog("vdrlive::content::mimetype(%s)", mime.c_str());
 
 std::string const path(request.getPathInfo());
-// dsyslog("vdrlive::content: path = %s", path.c_str());
 
 // security checking of path. In order to not allow exploits the
 // path must be absolute and not contain any upward references (e.g '../')
 if (path.empty()) {
+  esyslog("vdrlive::content ERROR: mimetype(%s), path is empty", mime.c_str());
   return HTTP_BAD_REQUEST;
 }
 if ('/' != path[0]) {
+  esyslog("vdrlive::content ERROR: mimetype(%s), path = %s, path does not start with '/'", mime.c_str(), path.c_str());
   return HTTP_BAD_REQUEST;
 }
 if (std::string::npos != path.find("../", 1)) {
+  esyslog("vdrlive::content ERROR: mimetype(%s), path = %s, path contains '../'", mime.c_str(), path.c_str());
   return HTTP_BAD_REQUEST;
 }
 
-FileCache::ptr_type f = LiveFileCache().get(path);
-
-if (f.get() == 0) {
-  // dsyslog("vdrlive::content: DECLINED");
+struct stat st;
+if (stat(path.c_str(), &st) != 0) {
   return DECLINED;
 }
-std::string ctime = tnt::HttpMessage::htdate(f->ctime());
+
+// file exists, length st.st_size, modification time st.st_mtime
+std::string mtime = tnt::HttpMessage::htdate(st.st_mtime);
 std::string browserTime = request.getHeader(tnt::httpheader::ifModifiedSince);
-if (browserTime == ctime) {
-  // dsyslog("vdrlive::content: HTTP_NOT_MODIFIED");
+if (browserTime == mtime) {
+  dsyslog("vdrlive::content: mimetype(%s), path = %s, HTTP_NOT_MODIFIED", mime.c_str(), path.c_str());
   return HTTP_NOT_MODIFIED;
 }
+// dsyslog("vdrlive::content: mimetype(%s), path = %s, modified", mime.c_str(), path.c_str());
 
-// dsyslog("vdrlive::content: send %d bytes of data", f->size());
-reply.setHeader(tnt::httpheader::lastModified, ctime);
-reply.out().write(f->data(), f->size());
+reply.setHeader(tnt::httpheader::cacheControl, "public, max-age=2592000"); // cache for 30 days, even when URL has parameters
+reply.setHeader(tnt::httpheader::lastModified, mtime);
+reply.setContentType(mime);
+reply.setDirectMode();
+
+bool done = false;
+size_t s = LiveSetup().GetThumb_size();
+if (thumb == 1 && s > 0 && mime == "image/jpeg") {
+  cFileContent data(path);
+
+  if (!data) {
+    esyslog("vdrlive::content.ecpp: mimetype(%s), path = %s, found by fstat, but !data", mime.c_str(), path.c_str());
+    return DECLINED;
+  }
+
+  s = data.ReduceImageSize(s, s);
+  if (s > 0) {
+    reply.setContentLengthHeader(s);
+    data.WriteTo(reply.out());
+    done = true;
+  }
+}
+if (!done) {
+  std::ifstream in(path, std::ifstream::binary);
+  if (!in) {
+    esyslog("vdrlive::content.ecpp: mimetype(%s), path = %s, found by fstat, but !in", mime.c_str(), path.c_str());
+    return DECLINED;
+  }
+  reply.setContentLengthHeader(st.st_size);
+  reply.out() << in.rdbuf();
+}
+
 </%cpp>

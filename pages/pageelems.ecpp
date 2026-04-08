@@ -160,19 +160,15 @@ if (pCounter && isVisible) (*pCounter)++;
 </%args>
 <%cpp>
 // generation of IMDb link to be checked here, otherwise inconsistent
-if (LiveSetup().GetShowIMDb())
-{
   int *pCounter = static_cast<int *>((void *)iCounter);
   if (pCounter) (*pCounter)++;
-  if (s_IMDB_ID.empty() ) { </%cpp>
-<a href="http://www.imdb.com/find?s=all&q=<$ (!title.empty() && title[0] == '%')?cToSvUrlEscaped(cSv(title).substr(1)):cToSvUrlEscaped(title) $>"
-<%cpp> } else { </%cpp>
-<a href="http://www.imdb.com/title/<$ s_IMDB_ID $>"
-<%cpp> } </%cpp>
- target="_blank"><img class="<$ className $>" src="<$ LiveSetup().GetThemedLink("img", "imdb.png") $>" alt="" <& tooltip.hint label=(label) className=("click-action") breaksAtLeft=(breaksAtLeft) breaksAtRight=(breaksAtRight) text=(tr("Find more in the IMDb (Internet Movie Database)")) &> /></a>
-<%cpp>
-}
+  if (s_IMDB_ID.empty() ) {
 </%cpp>
+<a href="http://www.imdb.com/find?s=all&q=<$ (!title.empty() && title[0] == '%')?cToSvUrlEscaped(cSv(title).substr(1)):cToSvUrlEscaped(title) $>"
+% } else {
+<a href="http://www.imdb.com/title/<$ s_IMDB_ID $>"
+% }
+ target="_blank"><img class="<$ className $>" src="<$ LiveSetup().GetThemedLink("img", "imdb.png") $>" alt="" <& tooltip.hint label=(label) className=("click-action") breaksAtLeft=(breaksAtLeft) breaksAtRight=(breaksAtRight) text=(tr("Find more in the IMDb (Internet Movie Database)")) &> /></a>
 </%def>
 
 <# ---------------------------------------------------------------------- #>
@@ -1046,7 +1042,9 @@ for (const cTvMedia &media: *media_v) {
       <div class="about_section">
         <div class="tabular">
           <div class="about_left"><$ tr("LIVE version") $>:</div>
-          <div class="about_right"><$ LIVEVERSION $><$ VERSION_SUFFIX $></div>
+%         cToSvConcat versionSuffix;
+%         AppendHtmlEscapedAndCorrectNonUTF8(versionSuffix, VERSION_SUFFIX).replaceAll("_", "_<wbr>").replaceAll("+", "<wbr>+");
+          <div class="about_right"><$ LIVEVERSION $><$$ versionSuffix $></div>
           <div class="about_left"><$ tr("VDR version") $>:</div>
           <div class="about_right"><$ VDRVERSION $></div>
         </div>

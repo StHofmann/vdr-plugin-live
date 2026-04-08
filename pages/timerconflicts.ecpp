@@ -126,6 +126,7 @@ if (!logged_in && LiveSetup().UseAuth()) {
                 timerStateHint = tr("Timer is active");
               }
 
+              cToSvConcat shortDescription;
               cToSvConcat longDescription;
               cToSvConcat searchTimName;
               std::string searchTimId;
@@ -138,9 +139,14 @@ if (!logged_in && LiveSetup().UseAuth()) {
               longDescription << "</p>";
 
               if (timer->Event()) {
-                bool truncated = false;
                 LOCK_SCHEDULES_READ;
+                if (timer->Event()->ShortText()) {
+                  bool truncated = false;
+                  AppendHtmlEscapedAndCorrectNonUTF8(shortDescription, StringWordTruncate(timer->Event()->ShortText(), 100, truncated));
+                  if (truncated) shortDescription << " ...";
+                }
                 if (timer->Event()->Description() ) {
+                  bool truncated = false;
                   longDescription << "<hr><p>";
                   AppendHtmlEscapedAndCorrectNonUTF8(longDescription, StringWordTruncate(timer->Event()->Description(), LiveSetup().GetMaxTooltipChars(), truncated), "</p><p>");
                   if (truncated) longDescription << " ...";
@@ -180,12 +186,14 @@ if (!logged_in && LiveSetup().UseAuth()) {
 </%cpp>
                   <a <& tooltip.display domId=(EpgEvents::EncodeDomId(timer->Channel()->GetChannelID(), timer->Event()->EventID()))  &>
                   class="apopup" title="<$$longDescription$>"
-                ><$$ cToSvReplace(timerFile, "~", "~<wbr>") $></a>
+                  ><$$ cToSvReplace(timerFile, "~", "~<wbr>") $></a></div>
+                  <div class="withmargin short">
+                    <a <& tooltip.display domId=(EpgEvents::EncodeDomId(timer->Channel()->GetChannelID(), timer->Event()->EventID())) &>
+                    class="apopup" title="<$$longDescription$>"><$ shortDescription $></a>
 %               } else {
                  <$$ cToSvReplace(timerFile, "~", "~<wbr>") $>
 %               }
                 </div></td>
-
                 <td class="<$ noSearchTimers ? "notpresent" : "searchtimer" $><? bottom ? " bottomrow" ?>"><div class="withmargin">
 %               if ( !timer->Local() || searchTimId.empty() ) {
 <# not created by epgsearch, check tvscraper autotimer #>

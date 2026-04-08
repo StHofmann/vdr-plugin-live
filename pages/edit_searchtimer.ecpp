@@ -7,6 +7,8 @@
 
 #include <iomanip>
 
+#include <recman.h>
+
 using namespace vdrlive;
 </%pre>
 <%args>
@@ -428,16 +430,19 @@ const char *TNT_ARRAY = "";
 %     }
       changedblacklistmode(document.getElementById("blacklistmode"));
       changeduseassearchtimer(document.getElementById("useassearchtimer"));
-      changedavoidrepeats(document.getElementById("avoidrepeats"));
-      changedcomparesummary(document.getElementById("comparesummary"));
-      changeddelmode(document.getElementById("delmode"));
     }
 
-    function checksearchterm()
+    function checksearchterm(button)
     {
-      if (document.getElementById("searchterm").value.length <= 3)
-        return confirm('<$ tr("Search text too short - use anyway?") $>');
-      return true;
+      var proceed = true;
+      if (document.getElementById("searchterm").value.length <= 3) {
+        proceed = confirm('<$ tr("Search text too short - use anyway?") $>');
+      }
+      if (proceed && button && button.name == "clone") {
+        const searchtimerId = document.getElementById('searchtimerid');
+        if (searchtimerId) searchtimerId.value = '';
+      }
+      return proceed;
     }
 
     function changedsearchmode(selection)
@@ -478,12 +483,12 @@ const char *TNT_ARRAY = "";
           input.disabled = true;
         }
       }
-        }
+    }
 
     function changeduseweekday(selection)
     {
       document.getElementById("weekdaysettings").style.display = (selection.checked ? "revert-layer" : "none");
-      }
+    }
 
     function changeduseparentalrating(selection)
     {
@@ -657,7 +662,7 @@ const char *TNT_ARRAY = "";
       <div id="content">
         <div class="spacebar"><# spacer with fade-out effect #></div>
         <form method="post" name="edit_searchtimer" action="edit_searchtimer.ecpp">
-          <input type="hidden" name="searchtimerid" value="<$ searchtimerid $>"/>
+          <input type="hidden" id="searchtimerid" name="searchtimerid" value="<$ searchtimerid $>"/>
           <input type="hidden" name="blacklistids" value="<$ blacklistids $>" id="blacklistids"/>
           <input type="hidden" name="nav_back" value="<$ nav_back $>"/>
           <table class="form" cellpadding="0" cellspacing="0">
@@ -727,13 +732,13 @@ const char *TNT_ARRAY = "";
                     <tr>
                       <td class="label"><div class="withmargin"><$ tr("Minimum rating") $>:</div></td>
                       <td>
-                        <input type="number" name="minparentalrating" min="0" max="18" value="<$ minparentalrating $>" />
+                        <input type="number" name="minparentalrating" min="0" max="<$ MAXPARENTALRATING $>" value="<$ minparentalrating $>" />
                       </td>
                     </tr>
                     <tr>
                       <td class="label"><div class="withmargin"><$ tr("Maximum rating") $>:</div></td>
                       <td>
-                        <input type="number" name="maxparentalrating" min="0" max="18" value="<$ maxparentalrating $>" />
+                        <input type="number" name="maxparentalrating" min="0" max="<$ MAXPARENTALRATING $>" value="<$ maxparentalrating $>" />
                       </td>
                     </tr>
                   </table>
@@ -913,7 +918,7 @@ const char *TNT_ARRAY = "";
                 <div id="channelgroup" style="display: none">
 %               if (channelGroups.size() > 0) {
                   <select name="changrpsel" size="1" id="changrpsel">
-%                 int i = 0; for (ChannelGroups::iterator changrp = channelGroups.begin(); changrp != channelGroups.end(); ++changrp, i++) {
+%                 for (auto changrp = channelGroups.begin(); changrp != channelGroups.end(); ++changrp) {
                     <option value="<$ changrp->Name() $>" <{ SELECTIF(changrpsel == changrp->Name()) }> ><$ changrp->Name() $></option>
 %                 }
                   </select>
@@ -1022,8 +1027,8 @@ const char *TNT_ARRAY = "";
 
             <!-- Use as search timer -->
             <tr>
-              <td class="label leftcol"><div class="withmargin"><$ tr("Use as search timer" ) $>:</div></td>
-              <td class="rightcol">
+              <td class="label leftcol bottomrow"><div class="withmargin"><$ tr("Use as search timer" ) $>:</div></td>
+              <td class="rightcol bottomrow">
                 <div>
                   <select onchange="changeduseassearchtimer(this)" name="useassearchtimer" size="1" id="useassearchtimer">
                     <option value="0" <{ SELECTIF(useassearchtimer == 0) }> ><$ trVDR("no") $></option>
@@ -1212,29 +1217,26 @@ const char *TNT_ARRAY = "";
                 </div>
               </td>
             </tr>
-
-            <!-- Messages and buttons -->
-            <tr>
-              <td class="buttonpanel leftcol rightcol bottomrow" colspan="2">
-                <div class="submission">
-                  <div class="warning"><span id="compatibility">
-%                 if (searchtimers.begin() != searchtimers.end()) {
-%                   if (searchtimers.begin()->HasInsufficientFields()) {
-                      <$ tr("The searchtimer lacks some form fields, so that their values cannot be saved. Please upgrade to the most recent version of EPGsearch.") $>
-%                   } else if (searchtimers.begin()->HasUnknownFields()) {
-                      <$ tr("The searchtimer includes extra fields. These will be saved with their original values.") $>
-%                   }
-%                 }
-                  </span></div>
-                  <div class="buttons">
-                    <button class="green" type="submit" name="test" value="test" onclick="return checksearchterm();"><$ tr("Test") $></button>
-                    <button class="green" type="submit" name="save" onclick="return checksearchterm();"><$ tr("Save") $></button>
-                    <button type="button" class="red" onclick="history.go(<$-nav_back$>)"><$ tr("Cancel") $></button>
-                  </div>
-                </div>
-              </td>
-            </tr>
           </table>
+
+          <!-- Messages and buttons -->
+          <div class="message warning" id="compatibility">
+%         if (searchtimers.begin() != searchtimers.end()) {
+%           if (searchtimers.begin()->HasInsufficientFields()) {
+                <$ tr("The searchtimer lacks some form fields, so that their values cannot be saved. Please upgrade to the most recent version of EPGsearch.") $>
+%           } else if (searchtimers.begin()->HasUnknownFields()) {
+                <$ tr("The searchtimer includes extra fields. These will be saved with their original values.") $>
+%           }
+%         }
+          </div>
+          <div class="button-panel">
+            <div class="buttons">
+              <button class="green" type="submit" name="test" value="test" onclick="return checksearchterm(this);"><$ tr("Test") $></button>
+              <button class="green" type="submit" name="save" onclick="return checksearchterm(this);"><$ tr("Save") $></button>
+              <button class="green" type="submit" name="clone" onclick="return checksearchterm(this);"><$ tr("Save as new") $></button>
+              <button type="button" class="red" onclick="history.go(<$-nav_back$>)"><$ tr("Cancel") $></button>
+            </div>
+          </div>
         </form>
         <div class="spacebar"><# spacer with fade-out effect #></div>
       </div>

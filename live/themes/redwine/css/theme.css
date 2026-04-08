@@ -38,6 +38,12 @@
   inherits: false;
 }
 
+@property --menu-color-inactive {
+  syntax: "<color>";
+  initial-value: #a0a0a0;
+  inherits: false;
+}
+
 @property --menu-color-highlight {
   syntax: "<color>";
   initial-value: #ffdb88;
@@ -532,7 +538,19 @@
   inherits: false;
 }
 
-/* error-widget colors */
+/* message colors */
+
+@property --message-color {
+  syntax: "<color>";
+  initial-value: #000000;
+  inherits: false;
+}
+
+@property --warning-color {
+  syntax: "<color>";
+  initial-value: #e9360d;
+  inherits: false;
+}
 
 @property --error-color {
   syntax: "<color>";
@@ -540,11 +558,27 @@
   inherits: false;
 }
 
-@property --error-title-color {
+/* message colors */
+
+@property --message-color {
   syntax: "<color>";
-  initial-value: #ffffff;
+  initial-value: #000000;
   inherits: false;
 }
+
+@property --warning-color {
+  syntax: "<color>";
+  initial-value: #e9360d;
+  inherits: false;
+}
+
+@property --error-color {
+  syntax: "<color>";
+  initial-value: #e9360d;
+  inherits: false;
+}
+
+/* error-widget colors */
 
 @property --error-border-color {
   syntax: "<color>";

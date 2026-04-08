@@ -73,6 +73,8 @@ endif
 
 CXXTOOLVER := $(shell cxxtools-config --version | sed -e's/\.//g' | sed -e's/pre.*//g' | awk '/^..$$/ { print $$1."000"} /^...$$/ { print $$1."00"} /^....$$/ { print $$1."0" } /^.....$$/ { print $$1 }')
 
+# For rough image scaling, used by VDR core anyway
+LIBS += -ljpeg
 
 ### Optional configuration features
 PLUGINFEATURES :=
@@ -104,8 +106,8 @@ DEFINES	+= -DVERSION_SUFFIX='"$(VERSION_SUFFIX)"'
 ### The object files (add further files here):
 PLUGINOBJS := $(PLUGIN).o recman.o epg_events.o thread.o tntconfig.o setup.o \
               timers.o tools.o status.o epgsearch.o \
-              md5.o filecache.o livefeatures.o preload.o timerconflict.o \
-              users.o osd_status.o ffmpeg.o xxhash.o i18n.o
+              md5.o livefeatures.o timerconflict.o \
+              users.o osd_status.o ffmpeg.o xxhash.o content.o
 PLUGINSRCS := $(patsubst %.o,%.cpp,$(PLUGINOBJS))
 
 WEB_LIB_PAGES := libpages.a
@@ -149,11 +151,11 @@ I18Npo   := $(wildcard $(PODIR)/*.po)
 I18Nmo   := $(addsuffix .mo, $(foreach file, $(I18Npo), $(basename $(file))))
 I18Nmsgs := $(addprefix $(DESTDIR)$(LOCDIR)/, $(addsuffix /LC_MESSAGES/vdr-$(PLUGIN).mo, $(notdir $(foreach file, $(I18Npo), $(basename $(file))))))
 I18Npot  := $(PODIR)/$(PLUGIN).pot
-I18Npot_deps := $(PLUGINSRCS) $(wildcard $(WEB_DIR_PAGES)/*.cpp) setup.h epg_events.h
+I18Npot_deps := $(PLUGINSRCS) $(wildcard $(WEB_DIR_PAGES)/*.cpp) setup.h epg_events.h confirm.h
 
 $(I18Npot): $(I18Npot_deps)
 	$(call PRETTY_PRINT,"GT" $@)
-	$(Q)xgettext -C -cTRANSLATORS --no-wrap --no-location -k -ktr -ktrNOOP --omit-header -o $@ $(I18Npot_deps)
+	$(Q)xgettext -C -cTRANSLATORS --no-wrap --no-location -k -ktr -ktrNOOP --package-name=VDR-LIVE --package-version=$(VERSION) -o $@ $(I18Npot_deps)
 
 .PHONY: I18Nmo
 I18Nmo: $(I18Nmo)

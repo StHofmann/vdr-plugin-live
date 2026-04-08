@@ -7,7 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VDR-LIVE 0.2.0\n"
-"Report-Msgid-Bugs-To: <cwieninger@gmx.de>\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-08 13:46+0200\n"
 "PO-Revision-Date: 2025-10-05 18:19+0200\n"
 "Last-Translator: Tomasz Maciej Nowak <tomek_n@o2.pl>\n"
 "Language-Team: see developers in README\n"
@@ -15,6 +16,36 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#, c-format
+msgid "Delete recording \"%s\"?"
+msgstr "Usunąć nagranie \"%s\"?"
+
+msgid "Delete recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Delete the following recordings?"
+msgstr ""
+
+#, c-format
+msgid "Restore recording \"%s\"?"
+msgstr ""
+
+msgid "Restore recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Restore the following recordings?"
+msgstr ""
+
+#, c-format
+msgid "Permanently delete recording \"%s\"?"
+msgstr ""
+
+msgid "Permanently delete recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Permanently delete the following recordings?"
+msgstr ""
 
 msgid "On archive DVD No."
 msgstr "W archiwum DVD nr"
@@ -127,6 +158,13 @@ msgstr "Plan został już zdefiniowany"
 msgid "Timer not defined"
 msgstr "Brak planu nagrań"
 
+#, c-format
+msgid "Delete timer \"%s\"?"
+msgstr ""
+
+msgid "Delete timer [timer name unavailable]?"
+msgstr ""
+
 msgid "Required minimum version of epgsearch: "
 msgstr "Wymagana wersja EPGsearch (minimum): "
 
@@ -138,6 +176,13 @@ msgstr "Niekodowane"
 
 msgid "EPGSearch version outdated! Please update."
 msgstr "Wtyczka EPGSearch jest nieaktualna! Proszę zaktualizować."
+
+msgid "Delete search timer [search timer name unavailable]?"
+msgstr ""
+
+#, c-format
+msgid "Delete search timer \"%s\"?"
+msgstr ""
 
 msgid "Timer conflict check detected "
 msgstr "Wykryto kolizję w planie nagrań: "
@@ -151,17 +196,8 @@ msgstr "kolizje"
 msgid "Sorry, no permission. Please contact your administrator!"
 msgstr "Brak uprawenień. Skontaktuj się ze swoim administratorem!"
 
-msgid "Couldn't find recording or no recordings available."
-msgstr "Nie można odnaleźć nagrania lub nagranie nie jest dostępne."
-
-msgid "Attempt to delete recording currently in playback."
-msgstr "Próba usunięcia aktualnie odtwarzanego nagrania."
-
 msgid "Please set a name for the recording!"
 msgstr "Proszę podać nazwę nagrania!"
-
-msgid "Couldn't find recording. Maybe you mistyped your request?"
-msgstr "Nie można odnaleźć nagrania. Literówka?"
 
 msgid "Cannot copy, rename or move the recording."
 msgstr "Nie można skopiować, przenieść ani zmienić nazwy nagrania."
@@ -195,6 +231,9 @@ msgstr "Krótki opis"
 
 msgid "Description"
 msgstr "Opis"
+
+msgid "Parental rating"
+msgstr "Dozwolone"
 
 msgid "Auxiliary info"
 msgstr "Dodatkowe informacje"
@@ -496,6 +535,9 @@ msgstr "Plan nagrań zawiera dodatkowe pola. Zostaną zapisane z oryginalną war
 msgid "Test"
 msgstr "Testuj"
 
+msgid "Save as new"
+msgstr ""
+
 msgid "Couldn't find timer. Maybe you mistyped your request?"
 msgstr "Nie można odnaleźć pozycji. Literówka?"
 
@@ -580,13 +622,16 @@ msgstr "Informacje EPG"
 msgid "Couldn't find recording or no recordings available"
 msgstr "Nie można odnaleźć nagrania"
 
+msgid "Nothing selected!"
+msgstr ""
+
 msgid "Page error"
 msgstr "Błąd strony"
 
-msgid "Not playing a recording."
+msgid "Not playing a recording"
 msgstr "Nie można odtworzyć nagrania."
 
-msgid "Not playing the same recording as from request."
+msgid "Not playing the same recording as from request"
 msgstr "Nie można odtworzyć żądanego nagrania."
 
 msgid "Cannot control playback!"
@@ -645,6 +690,27 @@ msgstr "Odtwórz to nagranie"
 
 msgid "Delete this recording"
 msgstr "Usuń"
+
+msgid "Restore this recording"
+msgstr ""
+
+msgid "Permanently delete this recording"
+msgstr ""
+
+msgid "Warning: This cannot be undone!"
+msgstr ""
+
+msgid "Expand this folder"
+msgstr ""
+
+msgid "Collapse this folder"
+msgstr ""
+
+msgid "Checked$none"
+msgstr ""
+
+msgid "Checked$all"
+msgstr ""
 
 msgid "Wrong username or password"
 msgstr "Błędna nazwa lub hasło użytkownika"
@@ -868,9 +934,6 @@ msgstr "Obsada i ekipa"
 msgid "Content"
 msgstr "Zawartość"
 
-msgid "Parental rating"
-msgstr "Dozwolone"
-
 msgid "Authors"
 msgstr "Autorzy"
 
@@ -925,14 +988,41 @@ msgstr "Nie można odnaleźć kanału lub kanały nie są dostępne. Literówka?
 msgid "Deleted recording:"
 msgstr "Usunięto nagranie:"
 
+msgid "Permanently deleted recording:"
+msgstr ""
+
 msgid "List of recordings"
 msgstr "Lista nagrań"
+
+msgid "List of deleted recordings"
+msgstr ""
 
 msgid "No recordings found"
 msgstr "Nie znaleziono nagrań"
 
-msgid "Delete selected"
+msgid "No deleted recordings found"
+msgstr ""
+
+msgid "Delete selected recordings"
 msgstr "Usuń zaznaczone"
+
+msgid "Warning: Permanently deleted recordings cannot be recovered!"
+msgstr ""
+
+msgid "Restore selected recordings"
+msgstr ""
+
+msgid "Permanently delete selected recordings"
+msgstr ""
+
+msgid "Checked recordings"
+msgstr ""
+
+msgid "Select all recordings in this folder"
+msgstr ""
+
+msgid "Deselect all recordings in this folder"
+msgstr ""
 
 msgid "No matching recordings found"
 msgstr "Nie znaleziono pasującyh nagrań"
@@ -966,13 +1056,6 @@ msgstr "Rozwiń wszystkie katalogi"
 
 msgid "Collapse all folders"
 msgstr "Zwiń wszystkie katalogi"
-
-#, c-format
-msgid "Delete recording \"%s\"?"
-msgstr "Usunąć nagranie \"%s\"?"
-
-msgid "Delete"
-msgstr "Usuń"
 
 msgid "Snapshot interval"
 msgstr "Okres pomiędzy migawkami"
@@ -1015,9 +1098,6 @@ msgstr "Aktywuj/dezaktywuj"
 
 msgid "Browse search timer results"
 msgstr "Przeglądaj wyniki zapytania"
-
-msgid "Delete this search timer?"
-msgstr "Usunąć to seryjne nagrywanie?"
 
 msgid "Delete search timer"
 msgstr "Usuń"
@@ -1112,6 +1192,12 @@ msgstr "Czas jaki ma obejmować Multiprzewodnik (w godzinach)"
 msgid "Show channels without EPG"
 msgstr "Pokazuj kanały bez EPG"
 
+msgid "Select all recordings in folder hierarchy"
+msgstr ""
+
+msgid "Allows to select a folder's entire hierarchy for subsequent deletion, even if collapsed. Otherwise, selection only affects an expanded folder."
+msgstr ""
+
 msgid "Folders for scraping series episodes"
 msgstr ""
 
@@ -1182,9 +1268,6 @@ msgstr "Brak zaplanowanych nagrań."
 msgid "Timer is recording"
 msgstr "Trwa nagrywanie."
 
-msgid "Delete this timer?"
-msgstr "Usuń"
-
 msgid "Users"
 msgstr "Użytkownicy"
 
@@ -1223,6 +1306,39 @@ msgstr "Widok listy"
 
 msgid "Live Interactive VDR Environment"
 msgstr ""
+
+msgid "Delete recording"
+msgstr ""
+
+msgid "Delete"
+msgstr "Usuń"
+
+msgid "Restore recording"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
+msgid "Permanently delete recording"
+msgstr ""
+
+msgid "Delete permanently"
+msgstr ""
+
+#~ msgid "Couldn't find recording. Maybe you mistyped your request?"
+#~ msgstr "Nie można odnaleźć nagrania. Literówka?"
+
+#~ msgid "Couldn't find recording or no recordings available."
+#~ msgstr "Nie można odnaleźć nagrania lub nagranie nie jest dostępne."
+
+#~ msgid "Attempt to delete recording currently in playback."
+#~ msgstr "Próba usunięcia aktualnie odtwarzanego nagrania."
+
+#~ msgid "Delete this search timer?"
+#~ msgstr "Usunąć to seryjne nagrywanie?"
+
+#~ msgid "Delete this timer?"
+#~ msgstr "Usuń"
 
 #~ msgid "Ignore missing EPG info"
 #~ msgstr "Ignoruj brakujące informacje EPG"

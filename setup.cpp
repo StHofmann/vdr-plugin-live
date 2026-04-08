@@ -51,6 +51,7 @@ Setup::Setup():
 
     m_showIMDb(1),
     m_showChannelsWithoutEPG(0),
+    m_selectAllInFolderHierarchy(0),
     m_seriesFolders(""),
     m_showSpecialFolders(0),
     m_landscapeThumbnails(0)
@@ -63,15 +64,16 @@ Setup::Setup():
 bool Setup::ParseCommandLine( int argc, char* argv[] )
 {
   static struct option opts[] = {
-      { "url", required_argument, NULL, 'u' },
+      { "url",  required_argument, NULL, 'u' },
       { "port", required_argument, NULL, 'p' },
       { "ip",   required_argument, NULL, 'i' },
       { "log",  required_argument, NULL, 'l' },
-      { "epgimages",  required_argument, NULL, 'e' },
-      { "sslport", required_argument, NULL, 's' },
+      { "epgimages", required_argument, NULL, 'e' },
+      { "sslport",   required_argument, NULL, 's' },
       { "cert", required_argument, NULL, 'c' },
-      { "key", required_argument, NULL, 'k' },
-      { "chanlogos",  required_argument, NULL, '1' },
+      { "key",  required_argument, NULL, 'k' },
+      { "chanlogos",  required_argument, NULL, 'c' | 0x100 },
+      { "thumb_size", required_argument, NULL, 's' | 0x100 },
       { 0 }
   };
 
@@ -87,9 +89,10 @@ bool Setup::ParseCommandLine( int argc, char* argv[] )
     case 's': m_serverSslPort = atoi( optarg ); break;
     case 'c': m_serverSslCert = optarg; break;
     case 'k': m_serverSslKey = optarg; break;
-    case '1': m_chanlogodir = optarg;
+    case 'c' | 0x100: m_chanlogodir = optarg;
       if(!m_chanlogodir.empty() && m_chanlogodir[m_chanlogodir.length()-1] != '/') m_chanlogodir += "/";
       break;
+    case 's' | 0x100: m_thumb_size = atoi( optarg ); break;
     default:  return false;
     }
   }
@@ -203,7 +206,9 @@ char const* Setup::CommandLineHelp() const
         << "  -k KEY,    --key=KEY                full path to a custom SSL certificate key file\n"
         << "  -l level,  --log=level              log level for Tntnet (values: WARN, ERROR, INFO, DEBUG, TRACE)\n"
         << "  -e <dir>,  --epgimages=<dir>        directory for EPG images\n"
-        << "             --chanlogos=<dir>        directory for channel logos (PNG)\n";
+        << "             --chanlogos=<dir>        directory for channel logos\n"
+        << "             --thumb_size=size        integer, e.g. 120. If provided, the server will reduce thumb image sizes\n"
+        << "                                      (default: 0 -> do not reduce thumb image sizes)\n";
     m_helpString = builder.str();
   }
   return m_helpString.c_str();
@@ -241,6 +246,7 @@ bool Setup::ParseSetupEntry( char const* name, char const* value )
   else if ( strcmp( name, "MarkNewRec" ) == 0 ) { m_markNewRec = atoi(value); }
   else if ( strcmp( name, "ShowIMDb" ) == 0 ) { m_showIMDb = atoi(value); }
   else if ( strcmp( name, "ShowChannelsWithoutEPG" ) == 0 ) { m_showChannelsWithoutEPG = atoi(value); }
+  else if ( strcmp( name, "SelectAllInFolderHierarchy" ) == 0 ) { m_selectAllInFolderHierarchy = atoi(value); }
   else if ( strcmp( name, "SeriesFolders" ) == 0 ) { m_seriesFolders = value; }
   else if ( strcmp( name, "ShowSpecialFolders" ) == 0 ) { m_showSpecialFolders = atoi(value); }
   else if ( strcmp( name, "LandscapeThumbnails" ) == 0 ) { m_landscapeThumbnails = atoi(value); }
@@ -495,6 +501,7 @@ bool Setup::SaveSetup()
   liveplugin->SetupStore("MarkNewRec", m_markNewRec);
   liveplugin->SetupStore("ShowIMDb", m_showIMDb);
   liveplugin->SetupStore("ShowChannelsWithoutEPG", m_showChannelsWithoutEPG);
+  liveplugin->SetupStore("SelectAllInFolderHierarchy", m_selectAllInFolderHierarchy);
   liveplugin->SetupStore("SeriesFolders", m_seriesFolders.c_str());
   liveplugin->SetupStore("ShowSpecialFolders", m_showSpecialFolders);
   liveplugin->SetupStore("LandscapeThumbnails", m_landscapeThumbnails);

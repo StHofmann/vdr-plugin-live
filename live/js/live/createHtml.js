@@ -68,7 +68,7 @@ function addScraperImageTitle(s, image, pt, title, seasonEpisode, runtime, date)
   if (image.length != 0) {
     s.a += '/tvscraper/'
     s.a += image
-    s.a += '\" class=\"thumb'
+    s.a += '?thumb=1\" class=\"thumb'
     s.a += pt
   } else s.a += 'img/transparent.png\" style=\"height: var(--icon-height, 16px)'
   if (title.length != 0 || date.length != 0) {
@@ -77,12 +77,12 @@ function addScraperImageTitle(s, image, pt, title, seasonEpisode, runtime, date)
     s.a += title
     if (seasonEpisode.length != 0) {
       s.a += '</p><p>'
-        if (seasonEpisode.charAt(0) == '0') {
-          s.a += seasonEpisode.slice(1);
-        } else  {
-          s.a += 'S'
-          s.a += seasonEpisode
-        }
+      if (seasonEpisode.charAt(0) == '0') {
+        s.a += seasonEpisode.slice(1);
+      } else  {
+        s.a += 'S'
+        s.a += seasonEpisode
+      }
     }
     if (runtime.length != 0) {
       s.a += '</p><p>'
@@ -114,24 +114,31 @@ function addTruncMedia(s, text, lims, liml) {
   else s.a += ' ...'
 }
 
-function add2ndLine(s, shortText, description) {
+function add2ndLine(s, shortText, description, href) {
 // second line (title / short text). Truncate, use description, ...
-  s.a += '<div class="short">'
-  var empty = true
   const parts = shortText.split(/<br\/?>/)
+  const empty = parts[0].length < 1 && description.length < 1
+  const rating = parts.length > 1;
+  s.a += '<div class="short">'
+  if (href && (!empty || rating)) {
+    s.a += '<a '
+    s.a += href
+    s.a += '>'
+  }
   if (parts[0].length > 0) {
     addTruncMedia(s, parts[0], 50, 80)
-    empty = false
   } else if (description.length > 0) {
     addTruncMedia(s, description, 50, 80)
-    empty = false
   }
-  if (parts.length > 1) {
+  if (rating) {
     if (!empty) s.a += " - "
     s.a += parts[1]
-    empty = false
   }
-  if (empty) s.a += '&nbsp;'
+  if (empty) {
+    s.a += '&nbsp;'
+  } else if (href) {
+    s.a += '</a>'
+  }
   s.a += '</div>'
 }
 
@@ -176,10 +183,10 @@ var imgDefer = document.getElementsByTagName('img');
   }
 }
 
-function clearRecordingsFilter(filter, currentSort, currentFlat) {
+function clearRecordingsFilter(filter, currentSort, currentFlat, recycle_bin) {
 // clear filter field
   filter.value = "";
-  filterRecordings(filter, currentSort, currentFlat)
+  filterRecordings(filter, currentSort, currentFlat, recycle_bin)
 }
 function clearCheckboxes(form) {
 // clearing checkboxes
@@ -189,6 +196,53 @@ function clearCheckboxes(form) {
         inputs[i].checked = false;
     }
   }
+}
+async function deleteMarkedRecordings(form, act) {
+// deleteMarkedRecordings
+// act = 'del' or 'pur'
+  var inputs = form.getElementsByTagName('input');
+  let epgid=act+'_recording_';
+  for (var i = 0; i<inputs.length; i++) {
+    if (inputs[i].type == 'checkbox' && inputs[i].checked &&
+        inputs[i].value && inputs[i].value.startsWith('recording_')) {
+      const id = inputs[i].value.substring(10);
+      epgid = epgid + id + "_";
+    }
+  }
+  if (typeof liveEnhanced !== 'undefined') {
+    var event_ = new Event(event);
+    var infowin = new InfoWin.Ajax(epgid, "epginfo.html?epgid="+epgid, $merge(liveEnhanced.options.infoWinOptions, {
+                      onDomExtend: liveEnhanced.domExtend.bind(liveEnhanced)
+                    }));
+    infowin.options.offsets.y = -400;
+    infowin.show(event_);
+    event_.stop();
+  } else alert("ERROR createHtml.js, deleteMarkedRecordings, liveEnhanced not defined");
+
+  /*
+  for (var i = 0; i<inputs.length; i++) {
+    if (inputs[i].type == 'checkbox' && inputs[i].checked &&
+        inputs[i].value && inputs[i].value.startsWith('recording_')) {
+      const id = inputs[i].value.substring(10);
+      all_del = all_del + id + ",";
+      var err = await execute('action.html?id=' + act + '_' + inputs[i].value);
+      if (!err.success) alert (err.error);
+    }
+  }
+  if (all_del == '') return;
+  let new_loc = '';
+  if (window.location.href.includes("?")) {
+    let pos = window.location.href.indexOf("deleted=");
+    if (pos == -1) {
+      new_loc = window.location.href + "&deleted=" + all_del;
+    } else {
+      new_loc = window.location.href.substring(0, pos) + "deleted=" + all_del;
+    }
+  } else {
+    new_loc = window.location.href + "?deleted=" + all_del;
+  }
+  window.location=new_loc;
+*/
 }
 async function execute(url) {
 /*
@@ -247,9 +301,9 @@ async function execute(url) {
   ret_object.error = error_child_nodes[0].nodeValue;
   return ret_object;
 }
-async function delete_rec_back(recid, history_num_back)
+async function action_back(id, history_num_back)
 {
-  var ret_object = await execute('delete_recording.html?param=' + recid);
+  var ret_object = await execute('action.html?id=' + id);
   if (!ret_object.success) alert (ret_object.error);
   history.go(-history_num_back);
 }
@@ -260,40 +314,17 @@ function back_depending_referrer(back_epginfo, back_others) {
     history.go(-back_others);
   }
 }
-function RecordingsSt(s, level, displayFolder, data) {
-  var recs_param =  '';
-  for (obj_i of data) {
-    if (typeof recs[obj_i] === 'undefined') {
-      if (recs_param.length == 0) {
-        recs_param += 'r=';
-      } else {
-        recs_param += '&r=';
-      }
-      recs_param += obj_i;
-    }
-  }
-  if (recs_param.length == 0) {
-    RecordingsSt_int(s, level, displayFolder, data);
-  } else {
-    const request = new XMLHttpRequest();
-    request.open("POST", "get_recordings.html", false);
-    request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    request.send(recs_param);
-    eval(request.response);
-    RecordingsSt_int(s, level, displayFolder, data);
-  }
-}
-async function rec_string_d_a(rec_ids) {
+async function rec_string_d_a(rec_ids, descend) {
   const st = Object.create(null)
   st.a = ""
-  await RecordingsSt_a(st, rec_ids[0], rec_ids[1], rec_ids[2])
+  let res = await RecordingsSt_a(st, rec_ids?.level, rec_ids?.folder_id, rec_ids?.display_folder, rec_ids?.items, descend)
   return st.a
 }
 
-function rec_string_d(rec_ids) {
+function rec_string_d(rec_ids, descend) {
   const st = Object.create(null)
   st.a = ""
-  RecordingsSt_int(st, rec_ids[0], rec_ids[1], rec_ids[2])
+  RecordingsSt_int(st, rec_ids?.level, rec_ids?.folder_id, rec_ids?.display_folder, rec_ids?.items, descend)
   return st.a
 }
 

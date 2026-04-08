@@ -1,6 +1,5 @@
 #include "tntconfig.h"
 
-#include "i18n.h"
 #include "live.h"
 #include "setup.h"
 
@@ -24,20 +23,19 @@ namespace vdrlive {
   }
 
   namespace {
-    std::string GetResourcePath()
+    cSv GetResourcePath()
     {
-      std::string resourceDir(Plugin::GetResourceDirectory());
-      return resourceDir;
+      return Plugin::GetResourceDirectory();
     }
 
-    void MapUrl(tnt::Tntnet & app, const char *rule, const char * component, std::string const & instPath, const char * pathInfo, const char * mime_type)
+    void MapUrl(tnt::Tntnet & app, const char *rule, const char * component, cSv instPath, const char * pathInfo, const char * mime_type)
     {
 #if TNT_MAPURL_NAMED_ARGS
       tnt::Mapping::args_type argMap;
       argMap.insert(std::make_pair("mime-type", mime_type));
 #endif
       app.mapUrl(rule, component)
-        .setPathInfo(instPath + pathInfo)
+        .setPathInfo(std::string(cToSvConcat(instPath, pathInfo)))
 #if TNT_MAPURL_NAMED_ARGS
         .setArgs(argMap);
 #else
@@ -154,6 +152,20 @@ namespace vdrlive {
     log_init(logConf);
 #endif
 
+    /* info on mapUrl / MapUrl
+     * this is (mostly) used to deliver static files like:
+     * - static *.js and *.css files
+     * - icons
+     * - images
+     * - ...
+     *
+     * looking at man tntent, <target>static@tntnet</target> can be used for that
+     * but: this requires the tntnet component, which is not available here / delivered with live
+     * note: live is a standalone webserver, and NOT tntnet with some components
+     *
+     * live has an own component to deliver static files: content
+     */
+
     // +++ CAUTION +++ CAUTION +++ CAUTION +++ CAUTION +++ CAUTION +++
     // ------------------------------------------------------------------------
     // These mapUrl statements are very security sensitive!
@@ -179,12 +191,6 @@ namespace vdrlive {
     // specified by the action parameter.
     // inserted by 'tadi' -- verified with above, but not counterchecked yet!
     app.mapUrl("^/vdr_request/([^.]+)", "$1");
-
-    // the following redirects play_video URL to the content component.
-    // inserted by 'tadi' -- not verified, not counterchecked yet!
-    //app.mapUrl("^/vlc/(.+)", "static@tntnet")
-    //  .setPathInfo("/$1")
-    //  .pushArg(string("DocumentRoot=") + VideoDirectory);
 
     // the following selects the theme specific 'theme.css' file
     // inserted by 'tadi' -- verified with above, but not counterchecked yet!
@@ -348,11 +354,12 @@ namespace vdrlive {
 
 #if TNT_GLOBAL_TNTCONFIG
     tnt::TntConfig::it().sessionTimeout = 86400;
-    tnt::TntConfig::it().defaultContentType = std::string("text/html; charset=") + LiveI18n().CharacterEncoding();
+    tnt::TntConfig::it().defaultContentType = std::string("text/html; charset=UTF-8");
 #else
     tnt::Sessionscope::setDefaultTimeout(86400);
-    tnt::HttpReply::setDefaultContentType(std::string("text/html; charset=") + LiveI18n().CharacterEncoding());
+    tnt::HttpReply::setDefaultContentType(std::string("text/html; charset=UTF-8"));
 #endif
+//  dsyslog2("vdr's encoding: cCharSetConv::SystemCharacterTable() = ", cCharSetConv::SystemCharacterTable());
 
     Setup::IpList const& ips = LiveSetup().GetServerIps();
     int port = LiveSetup().GetServerPort();

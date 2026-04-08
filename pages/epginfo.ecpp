@@ -6,13 +6,13 @@
 #include <tools.h>
 #include <epg_events.h>
 #include <recman.h>
+#include <confirm.h>
 
 using namespace vdrlive;
 
 </%pre>
 <%args>
   std::string epgid;
-  std::string delete_rec;  // to_confirm or confirmed
   int history_num_back = 0;
   std::string async;
   std::string tab;
@@ -41,18 +41,17 @@ using namespace vdrlive;
   bool ajaxReq = !async.empty() && (parse_int<int>(async) != 0);
 
   bool aboutBox = false;
-  if (epgid.compare(0, 4, "del_") == 0) {
-    delete_rec = "to_confirm";
-    epgid.erase(0, 4);
-  }
+
+  const cConfirm *confirm = get_confirm_popup(epgid);
+  if (confirm) pageTitle = confirm->get_headline();
 
   bool isEvent = false;
   bool isRecording = false;
   epgImage.clear();
 // we use objects of these types during creation of this page, so keep the locks
 
-  if (!delete_rec.empty()) {
-      pageTitle = tr("Delete recordings");
+  if (confirm) {
+      dsyslog2("pages/epginfo.ecpp, confirm popup, epgid = ", epgid, " pageTitle = ", pageTitle);
   } else if (!epgid.empty()) {
 
     const std::string_view recording_s("recording_");
@@ -63,7 +62,12 @@ using namespace vdrlive;
     if (epgid.compare(0, recording_s.length(), recording_s) == 0) {
       isRecording = true;
       LOCK_RECORDINGS_READ;
+#if VDRVERSNUM >= 20708
+      LOCK_DELETEDRECORDINGS_READ;
+      const cRecording *recording = RecordingsManager::GetByHash(epgid, Recordings, DeletedRecordings);
+#else
       const cRecording *recording = RecordingsManager::GetByHash(epgid, Recordings);
+#endif
       if (recording == 0) {
         throw HtmlError(tr("Couldn't find recording or no recordings available"));
       }
@@ -117,7 +121,7 @@ using namespace vdrlive;
     <div id="content">
       <div class="spacebar"><# spacer with fade-out effect #></div>
 <%cpp>
-  if (!epgEvent.Id().empty() && delete_rec.empty()) {
+  if (!epgEvent.Id().empty() && !confirm) {
     uintptr_t i_epgEvent = (uintptr_t)&epgEvent;
     cToSvConcat start(epgEvent.StartTime("%a,"), ' ',
                       epgEvent.StartTime(tr("%b %d %y")), ' ',
@@ -143,9 +147,50 @@ using namespace vdrlive;
     <& pageelems.about_tt_box &>
 <%cpp>
   }
-  if (!delete_rec.empty() ) {
+  if (confirm) {
 </%cpp>
-    <& recordings.todel todel=(epgid) confirmed=(delete_rec) history_num_back=(history_num_back) &>
+<div class="epg_description" id="<$ epgid $>">
+  <div class="station">
+    <div class="boxheader"><div class="caption"><$ confirm->get_headline() $></div></div>
+  </div>
+  <div class="epg_content confirmation">
+    <div class="about_head">
+<%cpp>
+    auto obj_list = confirm->get_object_names(epgid);
+    if (!obj_list.empty()) {
+</%cpp>
+      <div class="prompt"><$ confirm->get_question(epgid) $></div>
+      <div class="object-list">
+        <ul>
+%       for (auto obj: obj_list) {
+          <li><$obj$></li>
+%       }
+        </ul>
+      </div>
+%   } else {
+      <div class="prompt"><$ tr("Nothing selected!") $></div>
+%   }
+    </div>
+%   if (confirm->m_warning) {
+      <div class="message warning"><$ tr(confirm->m_warning) $></div>
+%   }
+    <form>
+      <input type="hidden" name="history_num_back" value="<$ history_num_back $>" id="history_<$ epgid $>"\>
+      <div class="about_section">
+        <div class="tabular buttons">
+%         if (!obj_list.empty()) {
+          <div class="about_left">
+            <button id="confirm_<$ epgid $>" class="green" type="button" onclick="action_back('<$ epgid $>', <$ history_num_back $>)"><$confirm->get_prompt()$></button>
+          </div>
+%         }
+          <div class="about_right">
+            <button id="close_<$ epgid $>" type="button" class="red" onclick="back_depending_referrer(1, <$history_num_back $>)"><$ tr("Cancel") $></button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 % }
       <div class="spacebar"><# spacer with fade-out effect #></div>
     </div>

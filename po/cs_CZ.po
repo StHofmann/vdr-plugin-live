@@ -7,7 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VDR-LIVE 0.2.0\n"
-"Report-Msgid-Bugs-To: <cwieninger@gmx.de>\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-08 13:46+0200\n"
 "PO-Revision-Date: 2010-05-10 22:15+0200\n"
 "Last-Translator: Vladimír Bárta <vladimir.barta@k2atmitec.cz>,Radek Stastny <dedkus@gmail.com> \n"
 "Language-Team: see developers in README\n"
@@ -15,6 +16,36 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#, c-format
+msgid "Delete recording \"%s\"?"
+msgstr ""
+
+msgid "Delete recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Delete the following recordings?"
+msgstr ""
+
+#, c-format
+msgid "Restore recording \"%s\"?"
+msgstr ""
+
+msgid "Restore recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Restore the following recordings?"
+msgstr ""
+
+#, c-format
+msgid "Permanently delete recording \"%s\"?"
+msgstr ""
+
+msgid "Permanently delete recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Permanently delete the following recordings?"
+msgstr ""
 
 msgid "On archive DVD No."
 msgstr ""
@@ -127,6 +158,13 @@ msgstr "Nahrávaní již nastaveno"
 msgid "Timer not defined"
 msgstr "Nahrávaní není nastaveno"
 
+#, c-format
+msgid "Delete timer \"%s\"?"
+msgstr ""
+
+msgid "Delete timer [timer name unavailable]?"
+msgstr ""
+
 msgid "Required minimum version of epgsearch: "
 msgstr "Potřebná minimální verze epgsearch: "
 
@@ -138,6 +176,13 @@ msgstr "FTA"
 
 msgid "EPGSearch version outdated! Please update."
 msgstr "Verze EPGSearch je zastaralá! Použijte novější."
+
+msgid "Delete search timer [search timer name unavailable]?"
+msgstr ""
+
+#, c-format
+msgid "Delete search timer \"%s\"?"
+msgstr ""
 
 msgid "Timer conflict check detected "
 msgstr ""
@@ -153,19 +198,9 @@ msgstr "Nahrávání bez kolize"
 msgid "Sorry, no permission. Please contact your administrator!"
 msgstr "Bohužel chybějící oprávnění. Zeptejte se svého administrátora!"
 
-msgid "Couldn't find recording or no recordings available."
-msgstr "Nelze nalézt nahrávky, nebo žádné neexistují"
-
-msgid "Attempt to delete recording currently in playback."
-msgstr "Pokus o smazání sledované nahrávky"
-
 #, fuzzy
 msgid "Please set a name for the recording!"
 msgstr "Prosím nastavte název nahrávání!"
-
-#, fuzzy
-msgid "Couldn't find recording. Maybe you mistyped your request?"
-msgstr "Nelze nalézt zadaného uživatele. Byl zadán správně?"
 
 msgid "Cannot copy, rename or move the recording."
 msgstr ""
@@ -202,6 +237,9 @@ msgstr "Popis"
 
 msgid "Description"
 msgstr "Popis"
+
+msgid "Parental rating"
+msgstr ""
 
 msgid "Auxiliary info"
 msgstr ""
@@ -503,6 +541,9 @@ msgstr ""
 msgid "Test"
 msgstr ""
 
+msgid "Save as new"
+msgstr ""
+
 msgid "Couldn't find timer. Maybe you mistyped your request?"
 msgstr "Nelze najít nahrávaní. Je správně zadáno?"
 
@@ -588,13 +629,16 @@ msgstr "Elektronický průvodce programem (EPG)"
 msgid "Couldn't find recording or no recordings available"
 msgstr "Nelze nalézt nahrávky, nebo žádné neexistují"
 
+msgid "Nothing selected!"
+msgstr ""
+
 msgid "Page error"
 msgstr "Chyba stránky"
 
-msgid "Not playing a recording."
+msgid "Not playing a recording"
 msgstr "Nepřehrává se nahrávka."
 
-msgid "Not playing the same recording as from request."
+msgid "Not playing the same recording as from request"
 msgstr "Nepřehrává se požadovaná nahrávka."
 
 msgid "Cannot control playback!"
@@ -653,6 +697,27 @@ msgstr ""
 
 msgid "Delete this recording"
 msgstr "Smazat nahrávku!"
+
+msgid "Restore this recording"
+msgstr ""
+
+msgid "Permanently delete this recording"
+msgstr ""
+
+msgid "Warning: This cannot be undone!"
+msgstr ""
+
+msgid "Expand this folder"
+msgstr ""
+
+msgid "Collapse this folder"
+msgstr ""
+
+msgid "Checked$none"
+msgstr ""
+
+msgid "Checked$all"
+msgstr ""
 
 msgid "Wrong username or password"
 msgstr "Chybné jméno, nebo heslo"
@@ -876,9 +941,6 @@ msgstr ""
 msgid "Content"
 msgstr "obsah"
 
-msgid "Parental rating"
-msgstr ""
-
 msgid "Authors"
 msgstr "Autoři"
 
@@ -933,15 +995,42 @@ msgstr "Kanál je nedostupný, nebo neexistuje. Zkontrolujte zadání."
 msgid "Deleted recording:"
 msgstr "Smazaná nahrávka:"
 
+msgid "Permanently deleted recording:"
+msgstr ""
+
 msgid "List of recordings"
 msgstr "Seznam nahrávek"
+
+msgid "List of deleted recordings"
+msgstr ""
 
 msgid "No recordings found"
 msgstr "žádné nahrávky"
 
+msgid "No deleted recordings found"
+msgstr ""
+
 #, fuzzy
-msgid "Delete selected"
+msgid "Delete selected recordings"
 msgstr "Smazat automatické nahrávání?"
+
+msgid "Warning: Permanently deleted recordings cannot be recovered!"
+msgstr ""
+
+msgid "Restore selected recordings"
+msgstr ""
+
+msgid "Permanently delete selected recordings"
+msgstr ""
+
+msgid "Checked recordings"
+msgstr ""
+
+msgid "Select all recordings in this folder"
+msgstr ""
+
+msgid "Deselect all recordings in this folder"
+msgstr ""
 
 msgid "No matching recordings found"
 msgstr ""
@@ -974,13 +1063,6 @@ msgid "Expand all folders"
 msgstr ""
 
 msgid "Collapse all folders"
-msgstr ""
-
-#, c-format
-msgid "Delete recording \"%s\"?"
-msgstr ""
-
-msgid "Delete"
 msgstr ""
 
 msgid "Snapshot interval"
@@ -1024,9 +1106,6 @@ msgstr "(De)Aktivace automatického nahrávání"
 
 msgid "Browse search timer results"
 msgstr "Listování výsledky vyhledávání"
-
-msgid "Delete this search timer?"
-msgstr "Smazat automatické nahrávání?"
 
 msgid "Delete search timer"
 msgstr "Smazat automatické nahrávání?"
@@ -1123,6 +1202,12 @@ msgstr ""
 msgid "Show channels without EPG"
 msgstr ""
 
+msgid "Select all recordings in folder hierarchy"
+msgstr ""
+
+msgid "Allows to select a folder's entire hierarchy for subsequent deletion, even if collapsed. Otherwise, selection only affects an expanded folder."
+msgstr ""
+
 msgid "Folders for scraping series episodes"
 msgstr ""
 
@@ -1194,9 +1279,6 @@ msgstr "Nahrávání není nastaveno"
 msgid "Timer is recording"
 msgstr "Probíhá nahrávání"
 
-msgid "Delete this timer?"
-msgstr ""
-
 msgid "Users"
 msgstr "Uživatelé"
 
@@ -1235,6 +1317,37 @@ msgstr "Souhrný pohled"
 
 msgid "Live Interactive VDR Environment"
 msgstr ""
+
+msgid "Delete recording"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Restore recording"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
+msgid "Permanently delete recording"
+msgstr ""
+
+msgid "Delete permanently"
+msgstr ""
+
+#, fuzzy
+#~ msgid "Couldn't find recording. Maybe you mistyped your request?"
+#~ msgstr "Nelze nalézt zadaného uživatele. Byl zadán správně?"
+
+#~ msgid "Couldn't find recording or no recordings available."
+#~ msgstr "Nelze nalézt nahrávky, nebo žádné neexistují"
+
+#~ msgid "Attempt to delete recording currently in playback."
+#~ msgstr "Pokus o smazání sledované nahrávky"
+
+#~ msgid "Delete this search timer?"
+#~ msgstr "Smazat automatické nahrávání?"
 
 #~ msgid "Ignore missing EPG info"
 #~ msgstr "Ignorovat chybějící EPG"

@@ -1,0 +1,65 @@
+<%pre>
+
+#include <exception.h>
+#include <tools.h>
+#include <users.h>
+#include <recman.h>
+#include <confirm.h>
+
+using namespace vdrlive;
+
+</%pre>
+<%args>
+  std::string id;  // action ID, what needs to be done
+  std::string async;
+</%args>
+<%session scope="global">
+bool logged_in(false);
+</%session>
+<%cpp>
+  if (!logged_in && LiveSetup().UseAuth()) {
+    cToSvConcat targetUrl = "/login.html?redirect=";
+    targetUrl.appendUrlEscaped(request.getQuery());
+    return reply.redirect(targetUrl.data());
+  }
+
+  const cConfirm *confirm = get_confirm_popup(id);
+  if (!confirm) {
+    cToSvConcat error_message("pages/action.ecpp, no action found for ID \"", id, "\"");
+    esyslog2(error_message);
+    throw HtmlError(error_message.c_str() );
+  }
+
+  if (!confirm->currentUserHasRight() ) {
+    esyslog2("pages/action.ecpp, no authorization for ", id);
+    throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
+  }
+
+  std::string message;
+  int result = confirm->perform_action(id, message);
+  if (result != 0)
+    esyslog2("in action.ecpp, id = ", id, " error_message = ", message);
+  else
+    dsyslog2("in action.ecpp, id = ", id, " message = ", message);
+
+  bool ajaxReq = !async.empty() && (parse_int<int>(async) != 0);
+  if (!ajaxReq) {
+    std::string referrer = request.getHeader("Referer:");
+    if (!referrer.empty() && referrer.find("login") == std::string::npos) {
+      return reply.redirect(referrer);
+    }
+</%cpp>
+<b>Result of Request:</b>
+<hr/>
+ID:        <$ id $><br/>
+Result:    <$ result==0?"success":"error" $><br/>
+Message:   <$ message $>
+<hr/>
+<%cpp>
+  } else {
+reply.setContentType( "application/xml" );
+</%cpp>
+<& xmlresponse.ajax name=("action") pname=("id") value=(id) result=(result==0) error=(result==0?std::string():message) &>
+<%cpp>
+  }
+</%cpp>

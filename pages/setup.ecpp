@@ -31,6 +31,7 @@ using namespace vdrlive;
   std::string markNewRec;
   std::string showIMDb;
   std::string showChannelsWithoutEPG;
+  std::string selectAllInFolderHierarchy;
   std::string seriesFolders;
   std::string showSpecialFolders;
   std::string landscapeThumbnails;
@@ -40,9 +41,11 @@ using namespace vdrlive;
 </%args>
 <%session scope="global">
   bool logged_in(false);
+  std::string last_page;
 </%session>
 <%include>page_init.eh</%include>
 <%cpp>
+last_page="setup";
 if (!logged_in && LiveSetup().UseAuth()) {
   cToSvConcat targetUrl = "/login.html?redirect=";
   targetUrl.appendUrlEscaped(request.getQuery());
@@ -89,6 +92,7 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
 
       LiveSetup().SetShowIMDb(!showIMDb.empty());
       LiveSetup().SetShowChannelsWithoutEPG(!showChannelsWithoutEPG.empty());
+      LiveSetup().SetSelectAllInFolderHierarchy(!selectAllInFolderHierarchy.empty());
       LiveSetup().SetSeriesFolders(seriesFolders);
       LiveSetup().SetShowSpecialFolders(!showSpecialFolders.empty());
       LiveSetup().SetLandscapeThumbnails(!landscapeThumbnails.empty());
@@ -123,6 +127,7 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
   markNewRec = LiveSetup().GetMarkNewRec() ? "1" : "";
   showIMDb = LiveSetup().GetShowIMDb() ? "1" : "";
   showChannelsWithoutEPG = LiveSetup().GetShowChannelsWithoutEPG() ? "1" : "";
+  selectAllInFolderHierarchy = LiveSetup().GetSelectAllInFolderHierarchy() ? "1" : "";
   seriesFolders = LiveSetup().GetSeriesFolders();
   showSpecialFolders = LiveSetup().GetShowSpecialFolders() ? "1" : "";
   landscapeThumbnails = LiveSetup().GetLandscapeThumbnails() ? "1" : "";
@@ -310,6 +315,13 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
               <input type="checkbox" name="showChannelsWithoutEPG" id="showChannelsWithoutEPG" value="1"<%cpp> CHECKIF(!showChannelsWithoutEPG.empty()); </%cpp>/>
             </td>
           </tr>
+          <tr>
+            <td class="label leftcol"><div class="withmargin"><$ tr("Select all recordings in folder hierarchy") $>:</div></td>
+            <td class="rightcol">
+              <input type="checkbox" name="selectAllInFolderHierarchy" id="selectAllInFolderHierarchy" value="1"<%cpp> CHECKIF(!selectAllInFolderHierarchy.empty()); </%cpp>/>
+              <& tooltip.help text=(tr("Allows to select a folder's entire hierarchy for subsequent deletion, even if collapsed. Otherwise, selection only affects an expanded folder.")) &></td>
+            </td>
+          </tr>
 <%cpp>
   cGetScraperVideo getScraperVideo;
   bool scraperAvailable = getScraperVideo.call(LiveSetup().GetPluginScraper());
@@ -349,12 +361,12 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
             <td class="rightcol"><select name="theme" size="1" id="theme">
 <%cpp>
 {
-  const std::string dirPath(Plugin::GetResourceDirectory() + "/themes");
+  const cToSvConcat dirPath(Plugin::GetResourceDirectory(), "/themes");
   cReadDir d(dirPath.c_str());
   struct dirent* e;
-  std::string parent("..");
-  std::string current(".");
-  std::string cvsDir("CVS");
+  cSv parent("..");
+  cSv current(".");
+  cSv cvsDir("CVS");
   std::vector<std::string> themes;
   while ((e = d.Next())) {
     if ((current == e->d_name) || (parent == e->d_name) || (cvsDir == e->d_name)) {
@@ -366,7 +378,7 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
     ** links to directories.
     */
     struct stat buf;
-    if ((stat((dirPath + "/" + e->d_name).c_str(), &buf) != 0) || (!S_ISDIR(buf.st_mode))) {
+    if ((stat((cToSvConcat(dirPath, "/", e->d_name)).c_str(), &buf) != 0) || (!S_ISDIR(buf.st_mode))) {
       continue;
     }
     themes.push_back(e->d_name);
@@ -383,14 +395,12 @@ if (!cUser::CurrentUserHasRightTo(UR_EDITSETUP))
 </%cpp>
             </select></td>
           </tr>
-          <tr>
-            <td class="buttonpanel leftcol rightcol bottomrow" colspan="2">
-              <div class="withmargin">
-              <button class="green" type="submit" name="save" ><$ tr("Save") $></button>
-              </div>
-            </td>
-          </tr>
         </table>
+        <div class="button-panel">
+          <div class="buttons">
+            <button class="green" type="submit" name="save" ><$ tr("Save") $></button>
+          </div>
+        </div>
       </form>
       <div class="spacebar"><# spacer with fade-out effect #></div>
     </div>

@@ -19,15 +19,18 @@ using namespace vdrlive;
 </%pre>
 <%args>
   std::string sort;
-  std::string todel;
   std::string diskinfo;
   std::string filter;
-  std::string deletions[];
+  std::string deleted;
   std::string flat;
   int history_num_back = 0;
+  int recycle_bin = 0;  // set this to 1 to display the deleted recordings
 </%args>
 <%session scope="global">
   bool logged_in(false);
+  std::string last_page;
+  int lastRecycle_bin(-1);
+  std::string lastFlat("n/a");
 </%session>
 
 <# scope="page" should be enough but does not work with tntnet 3.0 #>
@@ -36,6 +39,9 @@ using namespace vdrlive;
   std::string deleteResult;
   std::string currentFilter;
   std::string currentFlat;
+  int currentRecycle_bin = 0;
+  const char* rootFolder = "ROOT";
+  const char* descend = LiveSetup().GetSelectAllInFolderHierarchy() ? "true" : "false";
 </%request>
 
 <%include>page_init.eh</%include>
@@ -47,6 +53,13 @@ if (!logged_in && LiveSetup().UseAuth()) {
   cToSvConcat<0> targetUrl = "/login.html?redirect=";
   targetUrl.appendUrlEscaped(request.getQuery());
   return reply.redirect(targetUrl.data());
+}
+
+if (recycle_bin == 1) {
+  pageTitle = trVDR("Deleted recordings");
+} else {
+  recycle_bin = 0;  //only 0&1 allowed, 0 is the default
+  pageTitle = trVDR("Recordings");
 }
 
 if (request.getMethod() != "POST") history_num_back = 0;  // we can go back in history to this page
@@ -76,30 +89,24 @@ if (!sort.empty()) {
     currentSort = sort;
   LiveSetup().SetLastSortingMode(currentSort);
 }
+
+if (recycle_bin == 1 && currentSort == "duplicates") currentSort = "datedesc";
+
 currentFilter = filter;
+currentRecycle_bin = recycle_bin;
 
-pageTitle = tr("Recordings");
-
-if (!todel.empty()) {
-  if (!cUser::CurrentUserHasRightTo(UR_DELRECS))
-    throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
-  deletions.push_back(todel);
-}
 
 deleteResult = "";
-if (cUser::CurrentUserHasRightTo(UR_DELRECS)) {
-  for (auto it = deletions.begin(); it != deletions.end(); ++it) {
-    std::string name;
-    if (RecordingsManager::DeleteRecording(*it, &name) == 0) {
-      cToSvConcat delRec(tr("Deleted recording:"), " ");
-      delRec.appendReplace(name, "~", "/");
-      delRec << "<br/>";
-      deleteResult += std::string(delRec);
-    }
+const char *del_text;
+if (currentRecycle_bin == 0) del_text = tr("Deleted recording:");
+else del_text = tr("Permanently deleted recording:");
+
+for (cSv id: cSplit(deleted, ',')) {
+  const char *name=RecordingsManager::GetNameByHash(cToSvConcat("recording_", id));
+  if (name) {
+    cToSvConcat delRec(del_text, " ", name, "<br/>");
+    deleteResult += cSv(delRec);
   }
-  deletions.clear();
-} else {
-  throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
 }
 
 int FreeMB, UsedMB;
@@ -134,11 +141,12 @@ const char *TNT_ARRAY = "";
     <& pageelems.stylesheets &>
     <& pageelems.create_html_js &>
     <& pageelems.ajax_js &>
-<script>
-const recordings_tree_creation = <$ cToSvInt(RecordingsManager::GetLastRecordingsUpdate() ) $>;
-const recs = [];
-const rec_ids = Object.create(null)
-rec_ids["T"] = [1, 2]
+<script type="text/javascript">
+const recycle_bin = <$ recycle_bin $>;
+const recordings_tree_creation = <$ cToSvInt(RecordingsManager::GetLastRecordingsUpdate(true) ) $>;
+const fldr_ids = {}
+const rec_ids = {};
+const recs = {};
 
 // Label and Action are used for the tooltip  (like "Play in media player"), and will be HTML-encoded here
 function RecordingActionS(s, id, A, Img, Label, Action) {
@@ -169,13 +177,32 @@ function addEventRec_r(s, eventid, title, folder, shortText, description) {
   addEventRec(s, 'recording_', eventid, http_params, title, folder, shortText, description)
 }
 </script>
-
-  <script type="text/javascript" src="js/live/treeview.js"></script>
-  <script>
-  const tv = new Treeview("<$ LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_minus.png", "<$ LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_plus.png", "<$ LiveSetup().GetThemedLinkPrefixImg()$>folder_open.png", "<$ LiveSetup().GetThemedLinkPrefixImg()$>folder_closed.png");
+<script type="text/javascript" src="js/live/treeview.js"></script>
+<script type="text/javascript">
+document.addEventListener("DOMContentLoaded", function()
+{
+  openNodesOnPageLoad(<$ descend $>);
+});
+</script>
+%if (lastRecycle_bin != currentRecycle_bin || lastFlat != currentFlat || last_page != "recordings") {
+<# clear at first call or when the context changes #>
+  <script type="text/javascript">
+  clearSavedSelection();
   </script>
+<%cpp>
+}
+lastRecycle_bin = currentRecycle_bin;
+lastFlat = currentFlat;
+last_page="recordings";
+</%cpp>
+
 </head>
-<body onpagehide="saveScrollPosition('content')" onpageshow="restoreScrollPosition(); clearCheckboxes(document.getElementById('form_recordings'))">
+<body
+onpagehide="saveScrollPosition('content');
+            saveSelection(document.getElementById('form_recordings'))"
+onpageshow="setRecordingCounts('<$ rootFolder $>', true)"
+<# restoreSelection() and restoreScrollPosition() to be called once open nodes have been reloaded #>
+>
   <& pageelems.logo &>
 <%cpp>
 const char *active_r;
@@ -197,11 +224,22 @@ if (!deleteResult.empty()) {
     <# we enclose the recordings in a table to allow width control through 'siteprefs.css'; #>
     <# do not classify as 'listing' to avoid row separators                                 #>
     <table class="recordings-list" cellspacing="0" cellpadding="0"><tbody>
-    <tr><td>
+    <tr class="head"><td>
+% if (recycle_bin == 0) {
       <div class="boxheader"><div class="caption"><$ std::string(tr("List of recordings")) + " (" + diskinfo + ")" $></div></div>
+% } else {
+      <div class="boxheader"><div class="caption"><$ std::string(tr("List of deleted recordings")) + " (" + diskinfo + ")" $></div></div>
+% }
     </td></tr>
 <%cpp>
-    int rec_cnt;
+    int rec_cnt = -1;
+#if VDRVERSNUM >= 20708
+    if (recycle_bin == 1) {
+      LOCK_DELETEDRECORDINGS_READ;
+      rec_cnt = DeletedRecordings->Count();  // Access VDRs global cRecordings Recordings instance.
+    }
+#endif
+    if (rec_cnt == -1)
     {
       LOCK_RECORDINGS_READ;
       rec_cnt = Recordings->Count();  // Access VDRs global cRecordings Recordings instance.
@@ -210,7 +248,10 @@ if (!deleteResult.empty()) {
 </%cpp>
       <# add the message in a table row beneath the header, because the message alone looks weird #>
       <tr class="recording_item">
-        <td class="message"><$ tr("No recordings found") $></td>
+        <td class="message">
+          <? recycle_bin == 0 ? tr("No recordings found") ?>
+          <? recycle_bin == 1 ? tr("No deleted recordings found") ?>
+        </td>
       </tr>
 <%cpp>
     } else {
@@ -237,9 +278,9 @@ if (!deleteResult.empty()) {
           recItemRoot = duplicatesRecordingsTree->getRoot();
       } else {
         if (currentFlat == "true")
-          recItemRoot = std::make_shared<RecordingsItemDirFlat>();
+          recItemRoot = std::make_shared<RecordingsItemDirFlat>(recycle_bin);
         else
-          recItemRoot = RecordingsManager::GetRecordingsTree()->getRoot();
+          recItemRoot = RecordingsManager::GetRecordingsTree(recycle_bin)->getRoot();
       }
 
       uintptr_t irecording_item = (uintptr_t)&recording_item;
@@ -256,11 +297,25 @@ if (!deleteResult.empty()) {
         <input type="hidden" name="sort" value="<$ currentSort $>">
         <input type="hidden" name="filter" value="<$ currentFilter $>">
         <input type="hidden" name="flat" value="<$ currentFlat $>">
+        <input type="hidden" name="recycle_bin" value="<$ currentRecycle_bin $>">
         <input type="hidden" name="history_num_back" value="<$ history_num_back $>">
 %       if (!recording_item.empty()) {
-        <div class="withmargin hidden-xs">
-          <button class="red" type="submit"><$ tr("Delete selected") $></button>
-<#        <button class="green" type="button" onclick="clearCheckboxes(document.getElementById('form_recordings'))" ><$ tr("Uncheck all checkboxes") $></button> #>
+        <div class="submission withmargin hidden-xs">
+%         if (currentRecycle_bin == 0) {
+          <div class="button-panel hidden-xs">
+            <div class="buttons">
+              <button class="red delete" type="button" onclick="clearSavedSelection(); deleteMarkedRecordings(document.getElementById('form_recordings'), 'del')" ><$ tr("Delete selected recordings") $></button>
+            </div>
+          </div>
+%         } else {
+          <div class="message warning"><$ tr("Warning: Permanently deleted recordings cannot be recovered!") $></div>
+          <div class="button-panel hidden-xs">
+            <div class="buttons">
+              <button class="green restore" type="button" onclick="clearSavedSelection(); deleteMarkedRecordings(document.getElementById('form_recordings'), 'res')" ><$ tr("Restore selected recordings") $></button>
+              <button class="red purge" type="button" onclick="clearSavedSelection(); deleteMarkedRecordings(document.getElementById('form_recordings'), 'pur')" ><$ tr("Permanently delete selected recordings") $></button>
+            </div>
+          </div>
+%         }
         </div>
 %       }
       </form>
@@ -277,6 +332,17 @@ dsyslog("live, time recordings.ecpp: %f", timeNeeded.count());
 </html>
 <%include>page_exit.eh</%include>
 
+<#
+param instead of args does not work. Seems to be a bug in ecpp:
+ecpp creates the macro TNT_PARAM(uintptr_t, iRecItem, recordings.ecpp, (0));
+-> but this macro only takes 3 arguments, recordings.ecpp should be removed
+<%param>
+  uintptr_t iRecItem = 0;         // current dir, which is displayed here. Including subdirs
+</%param>
+
+<& recordings.recordings_item(iRecItem=iRecItem) irecording_item=(irecording_item) parentIdHash=(idHash) iOpenTreeNodes=(iOpenTreeNodes) &>
+
+#>
 <# ---------------------------------------------------------------------- #>
 
 <%def recordings_item>
@@ -285,6 +351,7 @@ dsyslog("live, time recordings.ecpp: %f", timeNeeded.count());
   uintptr_t irecording_item = 0;  // memory used to create the text we send to the browser
   uintptr_t iOpenTreeNodes = 0;   // list (folder hashes) of open folders
   std::string parentIdHash;       // empty for root (level 0)
+  std::string grandParentIdHash;  // empty for root (level 0)
 </%args>
 <%cpp>
 // get rec item of this (current) dir
@@ -298,10 +365,22 @@ const_rec_iterator<RecordingsItemDirPtr> l_dir_iterator = recItemThisDir->get_di
 if (!recItemThisDir->dirEntriesSorted() && currentSort == "namedesc") l_dir_iterator.set_backwards(true);
 
 bool hasSubDirs = false;
+cToSvConcat<0> recording_folders;
+recording_folders.reserve(512);
 for (const RecordingsItemDirPtr &recItem: l_dir_iterator) {
 // this is the loop over the subdirs
 // each subdir is a node, which can be expanded (or not)
-// each subdir has an identifier in <ul> tag: fldr_<$ idHash $>
+// image with +/-:           id="pm_<$ idHash $>", onclick="Toggle(this, '<$ idHash $>', <$ descend $>)"
+// image with folder symbol: id="fs_<$ idHash $>", onclick="Toggle(this, '<$ idHash $>', <$ descend $>)"
+// span with folder name:    id="fn_<$ idHash $>", onclick="Toggle(this, '<$ idHash $>', <$ descend $>)"
+// image with check mark:    id="ca_<$ idHash $>", onclick="CheckAll(this, '<$ idHash $>', <$ descend $>)"
+// image with uncheck mark:  id="ua_<$ idHash $>", onclick="UncheckAll(this, '<$ idHash $>', <$ descend $>)"
+// recording-item checkbox:  id="cb_<$ rec_id $>", onclick="ToggleChecked(this, '<$ idHash $>', <$ descend $>)"
+// span with rec-item count: id="nr_<$ idHash $>"
+// <ul items in folder:      id="<$ idHash $>"     // recordings list
+
+// fldr_ids["<$ parentIdHash $>"] = { level: <$level$>, parent_id: "<$grandParentIdHash$>", id: "<$ parentIdHash $>", folder_ids: [<$$ recording_folders $>], total: <$totalRecordings$>, local: <$localRecordings$>, checked: <$checkedRecordings$> }
+// rec_ids["<$ parentIdHash $>"] =  { level: <$level$>, folder_id: "<$ parentIdHash $>", display_folder: <$displayFolder$>, items: [<$$ *recording_item $>] }
 
 // search trough directory for new recordings
   bool newR = false;
@@ -309,40 +388,54 @@ for (const RecordingsItemDirPtr &recItem: l_dir_iterator) {
 // calculate idHash: uniquely defines this node
   cToSvXxHash32 idHash(cToSvConcat(parentIdHash, recItem->Name()));
   iRecItem = (uintptr_t)&recItem;
+  recording_folders.append(hasSubDirs ? ", \"" : "\"").append(idHash).append("\"");
 </%cpp>
   <li class="recording">
-    <div class="recording_item" onclick = "tv.Toggle(this, 'fldr_<$ idHash $>')">
+    <div class="recording_item">
     <table><tr>
-      <%cpp> if(level > 0) { </%cpp>
+%     if(level > 0) {
         <td class = "space">
           <img src="img/transparent.png" style="width: calc(var(--icon-width, 16px) * <$ level $>); height: var(--icon-height, 16px)" />
         </td>
-      <%cpp> } </%cpp>
+%     }
       <td class="space">
-        <img class="iconic button recording-expander" src="<$ LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_plus.png" />
-      </td><td class="space">
-        <img class="recording_folder" src="<$ LiveSetup().GetThemedLinkPrefixImg()$>folder_closed.png" />
+        <img class="iconic button recording-expander" id="pm_<$ idHash $>" src="<$ LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_plus.png" <& tooltip.hint text=(tr("Expand this folder")) &> onclick="Toggle(this, '<$ idHash $>', <$ descend $>) ">
       </td>
-%         if (!recItem->scraperImage().path.empty() ) {
+%     std::string checkedRecordings = tr("Checked recordings");
+      <td class="td-hidden-xs space nowrap"><div class="hidden-xs recording-selection">
+        <img class="iconic button recording-select-all xs-hidden" id="ca_<$ idHash $>" src="<$ LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_checkmark.png" <& tooltip.hint label=(tr("Select all recordings in this folder")) text=(checkedRecordings + ": <span>" + tr("Checked$none") + "</span>") &> onclick="CheckAll(this, '<$ idHash $>', <$ descend $>)" />
+        <img class="iconic button recording-deselect-all xs-hidden" id="ua_<$ idHash $>" src="<$ LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_cross.png" <& tooltip.hint label=(tr("Deselect all recordings in this folder")) text=(checkedRecordings + ": <span>" + tr("Checked$none") + "</span>") &> onclick="UncheckAll(this, '<$ idHash $>', <$ descend $> )" />
+      </div></td>
+      <td class="td-hidden-xs space nowrap"><div class="hidden-xs">
+        <img class="recording-folder" id="fs_<$ idHash $>" src="<$ LiveSetup().GetThemedLinkPrefixImg()$>folder_closed.png" <& tooltip.hint text=(tr("Expand this folder")) &> onclick="Toggle(this, '<$ idHash $>')" />
+      </div></td>
+%     if (!recItem->scraperImage().path.empty() ) {
         <td class = space>
           <div class="thumb">
-            <img data-src="/tvscraper/<$ recItem->scraperImage().path $>"
+            <img data-src="/tvscraper/<$ recItem->scraperImage().path $>?thumb=1"
               class="<$ recItem->scraperImage().width > recItem->scraperImage().height?"thumb":"thumbpt" $>"
             />
           </div>
         </td>
-%         }
-    <td class="recording_folder_name<$ (newR ? "_new" : "") $>">
-      <$ recItem->Name() $>
-    </td></tr></table>
+%     }
+      <td class="recording_folder_name<$ (newR ? "_new" : "") $>">
+        <span class="name" id="fn_<$ idHash $>" <& tooltip.hint text=(tr("Expand this folder")) &> onclick="Toggle(this, '<$ idHash $>')" ><$ recItem->Name() $></span>
+        [<span class="items" id="nr_<$ idHash $>"></span>]
+      </td>
+      </tr></table>
     </div>
-    <ul id="fldr_<$ idHash $>" class="recordingslist" style="display: none;">
-      <& recordings.recordings_item iRecItem=(iRecItem) irecording_item=(irecording_item) parentIdHash=(idHash) iOpenTreeNodes=(iOpenTreeNodes) &>
+    <ul id="<$ idHash $>" class="recordingslist" style="display: none;">
+      <& recordings.recordings_item iRecItem=(iRecItem) irecording_item=(irecording_item) grandParentIdHash=(parentIdHash.empty() ? rootFolder : parentIdHash) parentIdHash=(idHash) iOpenTreeNodes=(iOpenTreeNodes) &>
     </ul>
   </li>
   <%cpp>
   hasSubDirs = true;
 } // end of loop over subdirs
+  </%cpp>
+  <script>
+    fldr_ids["<$ parentIdHash.empty() ? rootFolder : parentIdHash $>"] = { level: <$level$>, parent_id: "<$ grandParentIdHash $>", id: "<$ parentIdHash $>", fldr_ids: [<$$ recording_folders $>], total: 0, local: 0, checked: 0 }
+  </script>
+  <%cpp>
 // now the items
 
 const_rec_iterator<RecordingsItemRec*> l_rec_iterator = recItemThisDir->get_rec_iterator();
@@ -381,17 +474,17 @@ recs[<$$cToSvInt(rPtr->Id())$>]=[<$$ *recording_item $>]
     if (!hasSubDirs) {
       </%cpp>
       <script>
-        rec_ids["fldr_<$ parentIdHash $>"] = []
+        rec_ids["<$ parentIdHash $>"] = {}
         document.write(
           '<li class="recording">' +
             '<table class="recordings" width="100%">' +
               '<tbody>' +
                 '<tr class="recording_item">' +
-                <%cpp> if(level > 0) { </%cpp>
+%               if(level > 0) {
                   '<td class = "space">' +
                     '<img src="img/transparent.png" style="width: calc(var(--icon-width, 16px) * <$ level $>); height: var(--icon-height, 16px)" />' +
                   '</td>' +
-                <%cpp> } </%cpp>
+%               }
                   '<td class="message"><$ tr("No matching recordings found") $></td>' +
                 '</tr>' +
               '</tbody>' +
@@ -409,9 +502,10 @@ recs[<$$cToSvInt(rPtr->Id())$>]=[<$$ *recording_item $>]
     </%cpp>
       <script>
 %   if (level == 0) {
-        document.write(rec_string_d([<$level$>, <$displayFolder$>, [ <$$ *recording_item $> ]]))
+        rec_ids["<$ rootFolder $>"] = { level: <$level$>, folder_id: "<$ rootFolder $>", display: 2, items: [<$$ *recording_item $>] }
+        document.write(rec_string_d({ level: <$level$>, folder_id: "<$ rootFolder $>", display_folder: 2, items: [<$$ *recording_item $>] }, <$ descend $>))
 %   } else if (!parentIdHash.empty()) {
-        rec_ids["fldr_<$ parentIdHash $>"] = [<$level$>, <$displayFolder$>, [ <$$ *recording_item $> ]]
+        rec_ids["<$ parentIdHash $>"] = { level: <$level$>, folder_id: "<$ parentIdHash $>", display_folder: <$displayFolder$>, items: [<$$ *recording_item $>] }
 %   }
       </script>
     <%cpp>
@@ -423,35 +517,50 @@ recs[<$$cToSvInt(rPtr->Id())$>]=[<$$ *recording_item $>]
 <%def sort_options>
 <%cpp> { </%cpp>
 <span class="label bold"><$ tr("Sort:") $> </span>
-<a href="recordings.html?sort=<$ (currentSort == "nameasc") ? "namedesc" : "nameasc"$>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>" <& setactive current="name" &> ><$ tr("Name") $></a>
+<a href="recordings.html?sort=<$ (currentSort == "nameasc") ? "namedesc" : "nameasc"$>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>&recycle_bin=<$currentRecycle_bin$>" <& setactive current="name" &> ><$ tr("Name") $></a>
 <span class="sep">|</span>
-<a href="recordings.html?sort=<$ (currentSort == "datedesc") ? "dateasc" : "datedesc"$>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>" <& setactive current="date" &> ><$ tr("Date") $></a>
+<a href="recordings.html?sort=<$ (currentSort == "datedesc") ? "dateasc" : "datedesc"$>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>&recycle_bin=<$currentRecycle_bin$>" <& setactive current="date" &> ><$ tr("Date") $></a>
 <span class="sep">|</span>
 <a href="recordings.html?sort=<$ (currentSort == "durationasc") ? "durationdesc" : "durationasc"$>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>" <& setactive current="duration" &> ><$ tr("Duration") $></a>
 <span class="sep">|</span>
-<a href="recordings.html?sort=duplicates&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>" <& setactive current="duplicates" &> ><$ tr("Duplicates") $></a>
+% if (currentRecycle_bin != 1) {
+<a href="recordings.html?sort=duplicates&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>&recycle_bin=<$currentRecycle_bin$>" <& setactive current="duplicates" &> ><$ tr("Duplicates") $></a>
+% } else {
+<span class="inactive"><$ tr("Duplicates") $></span>
 <%cpp>
+}
 #if VDRVERSNUM >= 20505
 </%cpp>
 <span class="sep">|</span>
-<a href="recordings.html?sort=<$ (currentSort == "errorsts") ? "errorsdur" : "errorsts" $>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>" <& setactive current="errors" &>><$ tr("Errors") $></a>
+<a href="recordings.html?sort=<$ (currentSort == "errorsts") ? "errorsdur" : "errorsts" $>&filter=<? !currentFilter.empty() ? currentFilter ?>&flat=<$currentFlat$>&recycle_bin=<$currentRecycle_bin$>" <& setactive current="errors" &>><$ tr("Errors") $></a>
 <%cpp>
 #endif
 </%cpp>
 <span class="sep">|</span>
 <span class="label bold" title="<$tr("Look in recordings titles and subtitles for the given string and display only the matching ones. You may also use perl compatible regular expressions (PCRE).")$>" >
   <label for="filter"><$ tr("Filter") $>:</label>
-  <input type="text" name="filter" value="<$ currentFilter $>" id="filter" onchange="filterRecordings(this, '<$ currentSort $>', '<$currentFlat$>')" />
+  <input type="text" name="filter" value="<$ currentFilter $>" id="filter" onchange="filterRecordings(this, '<$ currentSort $>', '<$currentFlat$>', '<$currentRecycle_bin$>')" />
+  <img onclick="clearRecordingsFilter(document.getElementById('filter'), '<$ currentSort $>', '<$currentFlat$>', '<$currentRecycle_bin$>')" class="icon button clear-filter" src="<$ LiveSetup().GetThemedLink("img", "icon_overlay_cross.png") $>" alt="" <& tooltip.hint text=(tr("Clear filter")) &>/>
 </span>
-<img onclick="clearRecordingsFilter(document.getElementById('filter'), '<$ currentSort $>', '<$currentFlat$>')" class="icon button clear-filter" src="<$ LiveSetup().GetThemedLink("img", "icon_overlay_cross.png") $>" alt="" <& tooltip.hint text=(tr("Clear filter")) &>/>
 <%cpp>
 if (currentFlat != "true") {
 </%cpp>
 <span class="sep">|</span>
-<img onclick="ExpandAll()" class="icon button expand-all" src="<$ LiveSetup().GetThemedLink("img", "icon_overlay_plus.png") $>" alt="" <& tooltip.hint text=(tr("Expand all folders")) &>/>
-<img onclick="CollapseAll()" class="icon button collapse-all" src="<$ LiveSetup().GetThemedLink("img", "icon_overlay_minus.png") $>" alt="" <& tooltip.hint text=(tr("Collapse all folders")) &>/>
+<span class="tools">
+  <img onclick="ExpandAll('<$ rootFolder $>', <$ descend $>)" class="icon button expand-all" src="<$ LiveSetup().GetThemedLink("img", "icon_overlay_plus.png") $>" alt="" <& tooltip.hint text=(tr("Expand all folders")) &>/>
+  <img onclick="CollapseAll('<$ rootFolder $>', <$ descend $>)" class="icon button collapse-all" src="<$ LiveSetup().GetThemedLink("img", "icon_overlay_minus.png") $>" alt="" <& tooltip.hint text=(tr("Collapse all folders")) &>/>
+</span>
 <%cpp>
 }
+#if VDRVERSNUM >= 20708
+</%cpp>
+<span class="sep">|</span>
+<span class="label bold" >
+  <label for="recycle_bin"><$ trVDR("Deleted recordings") $>:</label>
+  <input type="checkbox" name="recycle_bin" value="recycle_bin" <? currentRecycle_bin == 1 ? "checked" ?> id="recycle_bin" onchange="deletedRecordings(this, '<$ currentSort $>', '<$currentFlat$>', '<$currentFilter$>')" />
+</span>
+<%cpp>
+#endif
 </%cpp>
 <br />
 <%cpp> } </%cpp>
@@ -479,7 +588,34 @@ if (currentSort.compare(0, current.length(), current) == 0) { </%cpp>class="acti
   std::string breaksAtLeft;
   std::string breaksAtRight;
 </%args>
-<%cpp> { </%cpp><a href="epginfo.html?epgid=del_<$ id $>&sort=<$sort$>&filter=<$filter$>&flat=<$flat$>&history_num_back=<$history_num_back+1$>" <& tooltip.hint label=(label) className=("click-action") breaksAtLeft=(breaksAtLeft) breaksAtRight=(breaksAtRight) text=(tr("Delete this recording")) &>><img class="<$ className $>" src="<$ LiveSetup().GetThemedLink("img", "del.png") $>" alt="" /></a><%cpp> } </%cpp>
+<a href="epginfo.html?epgid=del_<$ id $>&sort=<$sort$>&filter=<$filter$>&flat=<$flat$>&history_num_back=<$history_num_back+1$>" <& tooltip.hint label=(label) className=("click-action") breaksAtLeft=(breaksAtLeft) breaksAtRight=(breaksAtRight) text=(tr("Delete this recording")) &>><img class="<$ className $>" src="<$ LiveSetup().GetThemedLink("img", "del.png") $>" alt="" /></a>
+</%def>
+
+<# ---------------------------------------------------------------------- #>
+<%def pur_rec>
+<%args>
+  std::string id;
+  int history_num_back = 0;
+  std::string className;
+  std::string label;
+  std::string breaksAtLeft;
+  std::string breaksAtRight;
+</%args>
+<a href="epginfo.html?epgid=pur_<$ id $>&history_num_back=<$history_num_back+1$>" <& tooltip.hint label=(label) className=("click-action") breaksAtLeft=(breaksAtLeft) breaksAtRight=(breaksAtRight) text=(tr("Permanently delete this recording")) &>><img class="<$ className $>" src="<$ LiveSetup().GetThemedLink("img", "del.png") $>" alt="" /></a>
+</%def>
+
+
+<# ---------------------------------------------------------------------- #>
+<%def res_rec>
+<%args>
+  std::string id;
+  int history_num_back = 0;
+  std::string className;
+  std::string label;
+  std::string breaksAtLeft;
+  std::string breaksAtRight;
+</%args>
+<a href="epginfo.html?epgid=res_<$ id $>&history_num_back=<$history_num_back+1$>" <& tooltip.hint label=(label) className=("click-action") breaksAtLeft=(breaksAtLeft) breaksAtRight=(breaksAtRight) text=(tr("Restore this recording")) &>><img class="<$ className $>" src="<$ LiveSetup().GetThemedLink("img", "restore.png") $>" alt="" /></a>
 </%def>
 
 <# ---------------------------------------------------------------------- #>
@@ -499,71 +635,6 @@ if (currentSort.compare(0, current.length(), current) == 0) { </%cpp>class="acti
 </%def>
 
 <# ---------------------------------------------------------------------- #>
-<%def todel>
-<%args>
-  std::string todel;
-  std::string confirmed;
-  std::string history_num_back;
-</%args>
-<%cpp>
-  std::string recording_Name;
-  {
-    LOCK_RECORDINGS_READ;
-    const cRecording *recording = RecordingsManager::GetByHash(todel, Recordings);
-    if (recording == nullptr)
-      throw HtmlError(tr("Couldn't find recording or no recordings available"));
-    recording_Name = recording->Name();
-  }
-  if (!cUser::CurrentUserHasRightTo(UR_DELRECS))
-    throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
-  if (confirmed == "confirmed") {
-    RecordingsManager::DeleteRecording(todel);
-</%cpp>
-<!DOCTYPE html>
-<html>
-  <script>
-    history.go(-<$ history_num_back $>);
-  </script>
-</html>
-%  } else {
-<div class="epg_description" id="del_<$ todel $>">
-  <div class="station">
-    <div class="boxheader"><div class="caption"><$ tr("Delete recordings") $></div></div>
-  </div>
-  <div class="epg_content">
-    <form>
-      <input type="hidden" name="epgid" value="<$todel$>" \>
-      <input type="hidden" name="delete_rec" value="confirmed" \>
-      <input type="hidden" name="history_num_back" value="<$ history_num_back $>" id="history_del_<$ todel $>"\>
-      <div class="about_head"><$ cToSvFormatted(tr("Delete recording \"%s\"?"), recording_Name.empty()?"No recording name available":recording_Name.c_str() ) $></div>
-      <div class="about_section">
-        <div class="tabular">
-          <div class="about_left">
-            <button id="confirm_del_<$ todel $>" class="green" type="button" onclick="delete_rec_back('<$ todel $>', <$ history_num_back $>)"><$ tr("Delete")$></button>
-          </div>
-          <div class="about_right">
-<# if previous page is epginfo.html, just go back one page #>
-<script>
-function cancel_delete() {
-  if (document.referrer.indexOf("epginfo.html?") != -1) {
-    history.go(-1);
-  } else {
-    history.go(-<$ history_num_back $>);
-  }
-}
-</script>
-            <button id="close_del_<$ todel $>" type="button" class="red" onclick="back_depending_referrer(1, <$history_num_back $>)"><$ tr("Cancel") $></button>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-% }
-</%def>
-
-
-<# ---------------------------------------------------------------------- #>
 <%def rec_tools>
 <%args>
   std::string id;
@@ -577,7 +648,8 @@ function cancel_delete() {
 <%cpp>
 cToSvConcat label = "";
 constexpr auto breaksAtRight = "~";
-const RecordingsItemRec* recPtr = RecordingsManager::GetByIdHash(id);
+bool deleted = false;
+const RecordingsItemRec* recPtr = RecordingsManager::GetByIdHash(id, &deleted);
 if (recPtr) {
   time_t startTime = recPtr->StartTime();
   label.appendDateTime(tr("%a,"), startTime );      // day of week
@@ -587,15 +659,22 @@ if (recPtr) {
   label.appendDateTime(tr("%I:%M %p"), startTime);  // time
   label.append(tr(" - ")).append(title);
 }
+if (!deleted) {
+  if (cDevice::PrimaryDevice() && cDevice::PrimaryDevice()->HasDecoder() ) {
 </%cpp>
-%   if (cDevice::PrimaryDevice() && cDevice::PrimaryDevice()->HasDecoder() ) {
 <& pageelems.ajax_action_href action="play_recording" param=(id) tip=(tr("Play this recording")) label=(label) breaksAtRight=(breaksAtRight) image="play.png" alt="" className="icon" &>
 %   }
 <& pageelems.hls_recording recId=(id) className="icon" label=(label) breaksAtRight=(breaksAtRight) &>
 <& pageelems.m3u_playlist_recording recid=(id) className="icon" label=(label) breaksAtRight=(breaksAtRight) &>
+% }
 <& pageelems.imdb_info_href title=(title) s_IMDB_ID=(s_IMDB_ID) className="icon" label=(label) breaksAtRight=(breaksAtRight) &>
+% if (!deleted) {
 <& recordings.edit_rec id=(id) sort=(sort) filter=(filter) flat=(flat) history_num_back=(history_num_back) className="icon" label=(label) breaksAtRight=(breaksAtRight) &>
 <& recordings.del_rec id=(id) sort=(sort) filter=(filter) flat=(flat) history_num_back=(history_num_back) className="icon" label=(label) breaksAtRight=(breaksAtRight) &>
+% } else {
+<& recordings.res_rec id=(id) history_num_back=(history_num_back) className="icon" label=(label) breaksAtRight=(breaksAtRight) &>
+<& recordings.pur_rec id=(id) history_num_back=(history_num_back) className="icon" label=(label) breaksAtRight=(breaksAtRight) &>
+% }
 <%cpp>
 if (recPtr) {
   const char *sdhd = nullptr;

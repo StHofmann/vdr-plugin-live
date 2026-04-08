@@ -68,7 +68,7 @@ bool logged_in(false);
     <div id="content">
       <div class="spacebar"><# spacer with fade-out effect #></div>
 %      if (results.size() == 0) {
-        <$ tr("No search results") $>
+        <div class="message"><$ tr("No search results") $></div>
 <%cpp>
        } else {
         std::string current_day = "";
@@ -84,6 +84,9 @@ bool logged_in(false);
           const cChannel* channel = result->GetChannel(Channels);
           if (!channel) continue;
           LOCK_RECORDINGS_READ;  // required because appendEpgItemWithRecItem needs also lock on recordings
+#if VDRVERSNUM >= 20708
+          LOCK_DELETEDRECORDINGS_READ;
+#endif
           LOCK_SCHEDULES_READ;
           const cEvent *event = result->GetEvent(channel, Schedules);
           if (!event || !event->StartTime() ) continue;

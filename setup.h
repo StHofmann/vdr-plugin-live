@@ -12,8 +12,8 @@
 #include "stringhelpers.h"
 #include <vdr/menuitems.h>
 
-#define LIVEVERSION "3.5.3"
-#define LIVEVERSNUM 30503
+#define LIVEVERSION "3.5.4"
+#define LIVEVERSNUM 30504
 #define LIVESUMMARY trNOOP("Live Interactive VDR Environment")
 
 namespace vdrlive {
@@ -100,7 +100,9 @@ class Setup
     cPlugin *GetPluginScraper() { return m_p_scraper; } // tvscraper. Or, if not available, scraper2vdr
     void SetTvscraperImageDir(const std::string &dir);
     const std::string &GetChanLogoDir() const { return m_chanlogodir; }
+    int GetThumb_size() const { return m_thumb_size; }
     bool GetShowChannelsWithoutEPG() const { return m_showChannelsWithoutEPG != 0; }
+    bool GetSelectAllInFolderHierarchy() const { return m_selectAllInFolderHierarchy != 0; }
     std::string GetSeriesFolders() const { return m_seriesFolders; }
     bool GetShowSpecialFolders() const { return m_showSpecialFolders; }
     bool GetLandscapeThumbnails() const { return m_landscapeThumbnails; }
@@ -131,6 +133,7 @@ class Setup
     void SetMarkNewRec(bool show) { m_markNewRec = show ? 1 : 0; }
     void SetShowIMDb(bool show) { m_showIMDb = show ? 1 : 0; }
     void SetShowChannelsWithoutEPG(bool show) { m_showChannelsWithoutEPG = show ? 1 : 0; }
+    void SetSelectAllInFolderHierarchy(bool select) { m_selectAllInFolderHierarchy = select ? 1 : 0; }
     void SetSeriesFolders(std::string const & seriesFolders) { m_seriesFolders = seriesFolders; }
     void SetShowSpecialFolders(bool show) { m_showSpecialFolders = show ? 1 : 0; }
     void SetLandscapeThumbnails(bool landcape) { m_landscapeThumbnails = landcape ? 1 : 0; }
@@ -169,6 +172,7 @@ class Setup
     cPlugin *m_p_tvscraper;
     cPlugin *m_p_scraper;
     std::string m_chanlogodir;
+    int m_thumb_size = 0;
 
     // setup options
     int m_lastChannel;
@@ -205,6 +209,7 @@ class Setup
     std::string m_streamVopt3;
     int m_showIMDb;
     int m_showChannelsWithoutEPG;
+    int m_selectAllInFolderHierarchy;
     std::string m_seriesFolders;
     int m_showSpecialFolders;
     int m_landscapeThumbnails;

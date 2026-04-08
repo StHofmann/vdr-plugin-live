@@ -62,6 +62,7 @@ std::vector<std::string> channel_groups_names;
 </%args>
 <%session scope="global">
   bool logged_in(false);
+  std::string last_page;
 </%session>
 <%request scope="global">
   unsigned int channel_group=0;
@@ -71,6 +72,7 @@ std::vector<std::string> channel_groups_names;
 </%request>
 <%include>page_init.eh</%include>
 <%cpp>
+  last_page="multischedule";
   reply.setHeader (tnt::httpheader::cacheControl, "no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate", true);
   if (!logged_in && LiveSetup().UseAuth()) {
     cToSvConcat<0> targetUrl = "/login.html?redirect=";
@@ -423,12 +425,12 @@ std::vector<std::string> channel_groups_names;
   }
 </%cpp>
 <table class="multischedule" cellspacing="0" cellpadding="0">
-  <tr class="header">
-    <td class="time"><div class="boxheader"><div class="caption"><$ tr("Time") $></div></div></td>
-    <td class="spacer"> &nbsp; </td>
+  <thead><tr class="header">
+    <th class="time"><div class="boxheader"><div class="caption"><$ tr("Time") $></div></div></th>
+    <th class="spacer"> &nbsp; </th>
 <# // first line of table:channel names #>
 % for ( unsigned int channel = 0; channel< channel_names.size() ; channel++) {
-    <td class="channel"><div class="boxheader"><div class="caption">
+    <th class="channel"><div class="boxheader"><div class="caption">
 %   if (channel_IDs[channel].Valid()) {
       <a href="schedule.html?channelid=<$ channel_IDs[channel] $>">
 %   }
@@ -442,10 +444,10 @@ std::vector<std::string> channel_groups_names;
 %   }
 <& pageelems.hls_channel channelId=(channel_IDs[channel]) className="icon" &>
 <& pageelems.m3u_playlist_channel channelId=(channel_IDs[channel]) className="icon" &>
-    </div></div></td>
-    <td class="spacer"> &nbsp; </td>
+    </div></div></th>
+    <th class="spacer"> &nbsp; </th>
 % }
-  </tr>
+  </tr></thead>
 <%cpp>
   bool odd=true;
   std::vector<std::vector<SchedEntry>::iterator> cur_event;
@@ -461,7 +463,7 @@ std::vector<std::string> channel_groups_names;
 </%cpp>
     <tr>
 <# second + line, first colomn: time #>
-      <td class="<? row == sched_end_row - 1 ? "bottomrow" ?> time leftcol rightcol <$ row_class $>">
+      <td class="<? row == sched_end_row - 1 ? "bottomrow" ?> time topaligned leftcol rightcol <$ row_class $>">
 %   if (minutes < MINUTES_PER_ROW) {
         <$ cToSvDateTime(tr("%I:%M %p"), sched_start +  row * 60 * MINUTES_PER_ROW)  $>
 %   } else {
@@ -544,7 +546,7 @@ std::vector<std::string> channel_groups_names;
 
 <%def channel_selection>
 <form action="multischedule.html" method="get" id="channels">
-  <span>
+  <span class="label bold">
   <label for="channel"><$ tr("Channel") $>:&nbsp;<span class="bold"></span></label>
   <select name="channel" id="channel" onchange="document.forms.channels.submit()" >
 % for (unsigned int i = 0; i < channel_groups_names.size(); ++i) {
@@ -552,6 +554,8 @@ std::vector<std::string> channel_groups_names;
     <$ channel_groups_names[i] $></option>
 % }
   </select>
+  </span>
+  <span class="label bold">
   <label for="time_para"><$ tr("Time") $>:&nbsp;<span class="bold"></span></label>
   <select name="time_para" id="time_para" onchange="document.forms.channels.submit()" >
 % for (unsigned int i = 0; i < times_names.size(); ++i) {

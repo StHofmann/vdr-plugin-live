@@ -8,7 +8,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VDR-LIVE 0.2.0\n"
-"Report-Msgid-Bugs-To: <cwieninger@gmx.de>\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-08 13:46+0200\n"
 "PO-Revision-Date: 2025-10-03 20:15+0200\n"
 "Last-Translator: Carel Willemse <carel@nekanali.nl>\n"
 "Language-Team: see developers in README\n"
@@ -16,6 +17,36 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#, c-format
+msgid "Delete recording \"%s\"?"
+msgstr "Verwijder opname \"%s\"?"
+
+msgid "Delete recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Delete the following recordings?"
+msgstr ""
+
+#, c-format
+msgid "Restore recording \"%s\"?"
+msgstr ""
+
+msgid "Restore recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Restore the following recordings?"
+msgstr ""
+
+#, c-format
+msgid "Permanently delete recording \"%s\"?"
+msgstr ""
+
+msgid "Permanently delete recording [recording name unavailable]?"
+msgstr ""
+
+msgid "Permanently delete the following recordings?"
+msgstr ""
 
 msgid "On archive DVD No."
 msgstr "Op archief DVD nr."
@@ -128,6 +159,13 @@ msgstr "Timer al gedefinieerd"
 msgid "Timer not defined"
 msgstr "Timer niet gedefinieerd"
 
+#, c-format
+msgid "Delete timer \"%s\"?"
+msgstr ""
+
+msgid "Delete timer [timer name unavailable]?"
+msgstr ""
+
 msgid "Required minimum version of epgsearch: "
 msgstr "Minimum vereiste versie van epgsearch plugin"
 
@@ -139,6 +177,13 @@ msgstr "FTA"
 
 msgid "EPGSearch version outdated! Please update."
 msgstr "EPGSearch plugin verouderd, Vernieuw deze a.u.b."
+
+msgid "Delete search timer [search timer name unavailable]?"
+msgstr ""
+
+#, c-format
+msgid "Delete search timer \"%s\"?"
+msgstr ""
 
 msgid "Timer conflict check detected "
 msgstr "Timerconflict gedetecteed "
@@ -152,17 +197,8 @@ msgstr "conflicten"
 msgid "Sorry, no permission. Please contact your administrator!"
 msgstr "Sorry, geen rechten. Raadpleeg uw administrator!"
 
-msgid "Couldn't find recording or no recordings available."
-msgstr "Kon geen opnamen vinden, of geen opnamen beschikbaar."
-
-msgid "Attempt to delete recording currently in playback."
-msgstr "Poging opname te wissen die op dit moment worst afgespeeld.1"
-
 msgid "Please set a name for the recording!"
 msgstr "Geef de opname een naam, a.u.b.!"
-
-msgid "Couldn't find recording. Maybe you mistyped your request?"
-msgstr "Kon opname niet vinden, misschien een typefout in het verzoek?"
 
 msgid "Cannot copy, rename or move the recording."
 msgstr "Kan de opname niet kopiëren, hernoemen of verplaatsen."
@@ -196,6 +232,9 @@ msgstr "Korte omschrijving"
 
 msgid "Description"
 msgstr "Omschrijving"
+
+msgid "Parental rating"
+msgstr "Leeftijdswijzer"
 
 msgid "Auxiliary info"
 msgstr "Meer informatie"
@@ -497,6 +536,9 @@ msgstr "The zoektimer bevat extra velden. Deze zullen worden opgeslagen met hun 
 msgid "Test"
 msgstr "Test"
 
+msgid "Save as new"
+msgstr ""
+
 msgid "Couldn't find timer. Maybe you mistyped your request?"
 msgstr "Kon timer niet vinden. Misschien een typefout in het verzoek?"
 
@@ -581,13 +623,16 @@ msgstr "Elektronische programmagids informatie"
 msgid "Couldn't find recording or no recordings available"
 msgstr "Kon opname niet vinden of opname is niet aanwezig"
 
+msgid "Nothing selected!"
+msgstr ""
+
 msgid "Page error"
 msgstr "Fout in pagina"
 
-msgid "Not playing a recording."
+msgid "Not playing a recording"
 msgstr "Er wordt geen opname afgespeeld."
 
-msgid "Not playing the same recording as from request."
+msgid "Not playing the same recording as from request"
 msgstr "Op verzoek wordt dezelfde opname niet nogmaals afgespeeld."
 
 msgid "Cannot control playback!"
@@ -646,6 +691,27 @@ msgstr "Speel deze opname af"
 
 msgid "Delete this recording"
 msgstr "Deze opname verwijderen"
+
+msgid "Restore this recording"
+msgstr ""
+
+msgid "Permanently delete this recording"
+msgstr ""
+
+msgid "Warning: This cannot be undone!"
+msgstr ""
+
+msgid "Expand this folder"
+msgstr ""
+
+msgid "Collapse this folder"
+msgstr ""
+
+msgid "Checked$none"
+msgstr ""
+
+msgid "Checked$all"
+msgstr ""
 
 msgid "Wrong username or password"
 msgstr "Verkeerde gebruikersnaam of wachtwoord"
@@ -869,9 +935,6 @@ msgstr "Cast and crew"
 msgid "Content"
 msgstr "Inhoud"
 
-msgid "Parental rating"
-msgstr "Leeftijdswijzer"
-
 msgid "Authors"
 msgstr "Acteurs"
 
@@ -926,14 +989,41 @@ msgstr "Kon geen kanaal vinden of kanaal is niet beschikbaar, misschien een type
 msgid "Deleted recording:"
 msgstr "Gewiste opnamen:"
 
+msgid "Permanently deleted recording:"
+msgstr ""
+
 msgid "List of recordings"
 msgstr "Lijst van opnamen"
+
+msgid "List of deleted recordings"
+msgstr ""
 
 msgid "No recordings found"
 msgstr "geen opnamen gevonden"
 
-msgid "Delete selected"
+msgid "No deleted recordings found"
+msgstr ""
+
+msgid "Delete selected recordings"
 msgstr "Wis de selectie"
+
+msgid "Warning: Permanently deleted recordings cannot be recovered!"
+msgstr ""
+
+msgid "Restore selected recordings"
+msgstr ""
+
+msgid "Permanently delete selected recordings"
+msgstr ""
+
+msgid "Checked recordings"
+msgstr ""
+
+msgid "Select all recordings in this folder"
+msgstr ""
+
+msgid "Deselect all recordings in this folder"
+msgstr ""
 
 msgid "No matching recordings found"
 msgstr "Geen bijbehorende opnamen gevonden"
@@ -967,13 +1057,6 @@ msgstr "Klap alle mappen uit"
 
 msgid "Collapse all folders"
 msgstr "Klap alle mappen dicht"
-
-#, c-format
-msgid "Delete recording \"%s\"?"
-msgstr "Verwijder opname \"%s\"?"
-
-msgid "Delete"
-msgstr "Verwijder"
 
 msgid "Snapshot interval"
 msgstr "Snapshot interval"
@@ -1016,9 +1099,6 @@ msgstr "Schakel zoektimer acties (in)actief"
 
 msgid "Browse search timer results"
 msgstr "Doorzoek zoektimer resultaten"
-
-msgid "Delete this search timer?"
-msgstr "Deze timer verwijderen?"
 
 msgid "Delete search timer"
 msgstr "Verwijder zoektimer"
@@ -1113,6 +1193,12 @@ msgstr "Programmaduur in het totaaloverzicht in uren"
 msgid "Show channels without EPG"
 msgstr "Toon ook kanalen zonder EPG"
 
+msgid "Select all recordings in folder hierarchy"
+msgstr ""
+
+msgid "Allows to select a folder's entire hierarchy for subsequent deletion, even if collapsed. Otherwise, selection only affects an expanded folder."
+msgstr ""
+
 msgid "Folders for scraping series episodes"
 msgstr ""
 
@@ -1183,9 +1269,6 @@ msgstr "Geen timer aanwezig"
 msgid "Timer is recording"
 msgstr "Timer neemt op"
 
-msgid "Delete this timer?"
-msgstr "Deze timer verwijderen?"
-
 msgid "Users"
 msgstr "Gebruikers"
 
@@ -1224,6 +1307,39 @@ msgstr "Overzichtslijst"
 
 msgid "Live Interactive VDR Environment"
 msgstr "Live Interactieve VDR Omgeving"
+
+msgid "Delete recording"
+msgstr ""
+
+msgid "Delete"
+msgstr "Verwijder"
+
+msgid "Restore recording"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
+msgid "Permanently delete recording"
+msgstr ""
+
+msgid "Delete permanently"
+msgstr ""
+
+#~ msgid "Couldn't find recording. Maybe you mistyped your request?"
+#~ msgstr "Kon opname niet vinden, misschien een typefout in het verzoek?"
+
+#~ msgid "Couldn't find recording or no recordings available."
+#~ msgstr "Kon geen opnamen vinden, of geen opnamen beschikbaar."
+
+#~ msgid "Attempt to delete recording currently in playback."
+#~ msgstr "Poging opname te wissen die op dit moment worst afgespeeld.1"
+
+#~ msgid "Delete this search timer?"
+#~ msgstr "Deze timer verwijderen?"
+
+#~ msgid "Delete this timer?"
+#~ msgstr "Deze timer verwijderen?"
 
 #~ msgid "Ignore missing EPG info"
 #~ msgstr "Negeer ontbrekende EPG info"

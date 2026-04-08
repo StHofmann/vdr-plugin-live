@@ -18,10 +18,12 @@ using namespace vdrlive;
 </%args>
 <%session scope="global">
   bool logged_in(false);
+  std::string last_page;
   TimerConflictNotifier timerNotifier;
 </%session>
 <%include>page_init.eh</%include>
 <%cpp>
+  last_page="timers";
   reply.setHeader (tnt::httpheader::cacheControl, "no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate", true);
   if (!logged_in && LiveSetup().UseAuth()) {
     cToSvConcat targetUrl = "/login.html?redirect=";
@@ -48,8 +50,6 @@ using namespace vdrlive;
     if (action == "delete") {
       if (!cUser::CurrentUserHasRightTo(UR_DELTIMERS))
         throw HtmlError( tr("Sorry, no permission. Please contact your administrator!") );
-//                        dsyslog("live: timers.ecpp timer->Id() %d", timer->Id());
-//                        dsyslog("live: timers.ecpp timer->Remote() %s", timer->Remote());
       TimerManager().DelTimer(timer_id, remote);
       timerNotifier.SetTimerModification();
     }
@@ -111,6 +111,7 @@ using namespace vdrlive;
         // output of the timer list:
         for (int i = 0; i < sortedTimers.Size(); i++) {
           const cTimer *timer = sortedTimers[i];
+          cToSvConcat shortDescription;
           cToSvConcat longDescription;
           cToSvConcat searchTimName;
           std::string searchTimId;
@@ -122,9 +123,14 @@ using namespace vdrlive;
           longDescription << "</p>";
           if (timer->Event())
           {
-            bool truncated = false;
             LOCK_SCHEDULES_READ;
+            if (timer->Event()->ShortText()) {
+              bool truncated = false;
+              AppendHtmlEscapedAndCorrectNonUTF8(shortDescription, StringWordTruncate(timer->Event()->ShortText(), 100, truncated));
+              if (truncated) shortDescription << " ...";
+            }
             if (timer->Event()->Description() ) {
+              bool truncated = false;
               longDescription << "<hr><p>";
               AppendHtmlEscapedAndCorrectNonUTF8(longDescription, StringWordTruncate(timer->Event()->Description(), LiveSetup().GetMaxTooltipChars(), truncated), "</p><p>");
               if (truncated) longDescription << " ...";
@@ -217,7 +223,10 @@ using namespace vdrlive;
 %           LOCK_SCHEDULES_READ;
             <a <& tooltip.display domId=(EpgEvents::EncodeDomId(timer->Channel()->GetChannelID(), timer->Event()->EventID())) &>
             class="apopup" title="<$$longDescription$>">
-            <$$ cToSvReplace(timerFile, "~", "~<wbr>") $></a>
+            <$$ cToSvReplace(timerFile, "~", "~<wbr>") $></a></div>
+            <div class="withmargin short" <$$longDescriptionTitle$> >
+              <a <& tooltip.display domId=(EpgEvents::EncodeDomId(timer->Channel()->GetChannelID(), timer->Event()->EventID())) &>
+              class="apopup" title="<$$longDescription$>"><$ shortDescription $></a>
 %         } else {
             <$$ cToSvReplace(timerFile, "~", "~<wbr>") $>
 %         }
@@ -244,7 +253,7 @@ using namespace vdrlive;
 %             AppendHtmlEscapedAndCorrectNonUTF8(label, timer->File() );
               <a class="action-rightcol" href="timers.html?timerid=<$ SortedTimers::EncodeDomId(SortedTimers::GetTimerId(*timer)) $>&action=toggle"><img class="icon" src="<$ LiveSetup().GetThemedLink("img", (timer->Flags() & tfActive) ? "active.png" : "inactive.png") $>" alt="" <& tooltip.hint label=(label) className=("click-action") breaksAtRight=(fileNameBreaks) text=(tr("Toggle timer (in)active")) &> /></a>
               <div class="action-rightcol"><& pageelems.edit_timer timerId=(SortedTimers::GetTimerId(*timer)) className="icon" label=(label) breaksAtRight=(fileNameBreaks) &></div>
-              <a class="action-rightcol" href="timers.html?timerid=<$ SortedTimers::EncodeDomId(SortedTimers::GetTimerId(*timer)) $>&action=delete" onclick="return confirm('<$ label $>\\n\\n<$ tr("Delete this timer?") $>')"><img class="icon" src="<$ LiveSetup().GetThemedLink("img", "del.png") $>" alt="" <& tooltip.hint label=(label) className=("click-action") breaksAtRight=(fileNameBreaks) text=(tr("Delete timer")) &> /></a>
+              <a class="action-rightcol" href="epginfo.html?epgid=det_<$ SortedTimers::EncodeDomId(SortedTimers::GetTimerId(*timer)) $>&history_num_back=1"><img class="icon" src="<$ LiveSetup().GetThemedLink("img", "del.png") $>" alt="" <& tooltip.hint label=(label) className=("click-action") breaksAtRight=(fileNameBreaks) text=(tr("Delete timer")) &> /></a>
             </div>
           </td>
         </tr>

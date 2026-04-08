@@ -18,6 +18,30 @@ reply.setHeader (tnt::httpheader::contentType, "text/javascript; charset=utf-8",
 </%cpp>
 
 const regExLineBreak = /(<|&lt;)br\\/?(>|&gt;)/g
+const selectAllInFolderHierarchy = <$ LiveSetup().GetSelectAllInFolderHierarchy() ? "true" : "false" $>;
+
+function set_icons_closed(fldr_hash) {
+// input: folder hash
+// -> set the images to the closed state, indicating the folder is currently closed
+
+  let img_plus_minus = document.getElementById('pm_' + fldr_hash);
+  update_icon(img_plus_minus, '<$LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_plus.png', gettext_Expand_this_folder());
+  let img_folder_symbol = document.getElementById('fs_' + fldr_hash);
+  update_icon(img_folder_symbol, '<$LiveSetup().GetThemedLinkPrefixImg()$>folder_closed.png', gettext_Expand_this_folder());
+  let folder_name = document.getElementById('fn_' + fldr_hash);
+  update_icon(folder_name, null, gettext_Expand_this_folder());
+}
+function set_icons_open(fldr_hash) {
+// input: folder hash
+// -> set the images to the open state, indicating the folder is currently open
+
+  let img_plus_minus = document.getElementById('pm_' + fldr_hash);
+  update_icon(img_plus_minus, '<$LiveSetup().GetThemedLinkPrefixImg()$>icon_overlay_minus.png', gettext_Collapse_this_folder());
+  let img_folder_symbol = document.getElementById('fs_' + fldr_hash);
+  update_icon(img_folder_symbol, '<$LiveSetup().GetThemedLinkPrefixImg()$>folder_open.png', gettext_Collapse_this_folder());
+  let folder_name = document.getElementById('fn_' + fldr_hash);
+  update_icon(folder_name, null, gettext_Collapse_this_folder());
+}
 
 function addErrorIcon(s, numErrors, durationDeviation, duration, numTsFiles) {
   if (numErrors <= -100) return
@@ -227,16 +251,16 @@ function RecordingActionStream(s, id, label) {
   s.a += '\"><img class=\"hidden-xs invisible icon\" src=\"<$LiveSetup().GetThemedLinkPrefixImg()$>stream_button.png\" /></a>'
 }
 
-async function RecordingsSt_a(s, level, displayFolder, data) {
+async function RecordingsSt_a(s, level, folderId, displayFolder, data, descend) {
   var recs_param =  '';
-  for (obj_i of data) {
+  for (obj_i of data ?? []) { // to cater for undefined data
     if (typeof recs[obj_i] === 'undefined') {
       recs_param += '&r<$ TNT_ARRAY $>='
       recs_param += obj_i;
     }
   }
   if (recs_param.length == 0) {
-    RecordingsSt_int(s, level, displayFolder, data);
+    RecordingsSt_int(s, level, folderId, displayFolder, data, descend);
   } else {
     var recs_param_a = 'vdr_start=<$ cToSvInt(LiveSetup().GetVdrStart() ) $>&recordings_tree_creation=';
     recs_param_a += recordings_tree_creation;
@@ -250,10 +274,10 @@ async function RecordingsSt_a(s, level, displayFolder, data) {
     });
     const new_recs = await response.text();
     eval(new_recs);
-    if (vdr_restart) {
+    if (vdr_restart || recordings_tree_re_created) {
       location.reload();
     } else {
-      RecordingsSt_int(s, level, displayFolder, data);
+      RecordingsSt_int(s, level, folderId, displayFolder, data, descend);
     }
   }
 }
@@ -261,32 +285,28 @@ async function RecordingsSt_a(s, level, displayFolder, data) {
 %// do not HTML-encode title; will be HTML-encoded here!
 function addEventRec(s, eventprefix, eventid, http_params, title, folder, shortText, description) {
 // eventprefix == 'recording_' or 'event_'
-  s.a += '<a href="epginfo.html?epgid='
-  s.a += eventprefix
-  s.a += eventid
-  s.a += http_params
-  s.a += '" class="apopup" title="'
+  let href = 'href="epginfo.html?epgid='
+  href += eventprefix
+  href += eventid
+  href += http_params
+  href += '" class="apopup" title="'
   if (description.length != 0) {
-    s.a += '<p>'
-    s.a += description.replaceAll(regExLineBreak, '</p><p>')
-    s.a += '</p>'
+    href += '<p>'
+    href += description.replaceAll(regExLineBreak, '</p><p>')
+    href += '</p>'
   }
-  s.a += '<p class=&quot;click-details&quot;><$tr("Click to view details")$></p>"><div class="margin-bottom bold-font">'
+  href += '<p class=&quot;click-details&quot;><$tr("Click to view details")$></p>"'
+  s.a += '<div class="margin-bottom bold-font"><a '
+  s.a += href
+  s.a += '>'
   addEncodeHtml(s, title)
   if (folder.length != 0) {
     s.a += '<span class="normal-font"> ('
     s.a += folder.replaceAll("~", "~<wbr>")
     s.a += ')</span>'
   }
-  s.a += '</div>'
-  // to avoid a link over empty space
-  if (shortText.length == 0 && description.length == 0) {
-    s.a += '</a>'
-    add2ndLine(s, shortText, description)
-  } else {
-    add2ndLine(s, shortText, description)
-    s.a += '</a>'
-  }
+  s.a += '</a></div>'
+  add2ndLine(s, shortText, description, href)
 }
 
 <#
@@ -305,7 +325,7 @@ function addEventRec(s, eventprefix, eventid, http_params, title, folder, shortT
 // [10] : Number of recording errors
 // [11] : audio/SD/HD/UHD r/s/h/u
 // [12] : channel name
-// [13] : _new
+// [13] : new-recording indicator
 // [14] : Name (do not HTML-encode name; will be HTML-encoded here!)
 // [15] : Shorttext
 // [16] : Description
@@ -317,18 +337,18 @@ function addEventRec(s, eventprefix, eventid, http_params, title, folder, shortT
 // [22] : frame parameter text
 // before calling, make sure that all recs[obj_i] exist!
 #>
-function RecordingsSt_int(s, level, displayFolder, data) {
+function RecordingsSt_int(s, level, folderId, displayFolder, data, descend) {
   s.a += '<li class="recording"><div><table class="recordings">'
-  for (obj_i of data) {
+  for (obj_i of data ?? []) {
     if (typeof recs[obj_i] === 'undefined') continue;
     let obj = recs[obj_i]
     <#
     // the previous name 'is_recoding' [action still underway] had a different
     // notion than EpgInfo::IsRecording() [kind of element], which is confusing;
-    // so we better choose a moire concise name
+    // so we better choose a more concise name
     #>
     let still_recording = '';
-    if (obj[1] === 'still_recording') {
+    if (recycle_bin == 0 && obj[1] === 'still_recording') {
       still_recording = ' still_recording';
     }
     <#
@@ -339,7 +359,7 @@ function RecordingsSt_int(s, level, displayFolder, data) {
     // not be flexible enough within the style sheet (i.e, result in too many duplicate
     // style definitions)
     #>
-    s.a += '<tr class="recording_item'
+    s.a += '<tr id="recid_' + obj_i + '" class="recording_item'
     s.a += obj[13] ? ' recording_new' : ''
     <#
     // similar to 'recording_new', the "joint" class 'recording_item.still_recording'
@@ -352,9 +372,18 @@ function RecordingsSt_int(s, level, displayFolder, data) {
     if (level > 0) s.a +=
       '<td class="space"> <img src="img/transparent.png" style="width: calc(var(--icon-width, 16px) * ' + String(level) + '); height: var(--icon-height, 16px)" /></td>'
     s.a += '<td class="td-hidden-xs"><div class="hidden-xs recording_imgs">'
-    s.a += '<input type="checkbox" name="deletions<$TNT_ARRAY$>" value="recording_'
+    s.a += '<input type="checkbox" name="deletions<$TNT_ARRAY$>" id="cb_'
+// insert 'folderId' to avoid duplicate IDs in virtual folders
+    s.a += folderId
+    s.a += '_'
+    s.a += obj_i
+    s.a += '" value="recording_'
     s.a += obj[0]
-    s.a += '" />'
+    s.a += '" onclick="ToggleChecked(this, \\''
+    s.a += folderId ?? '';
+    s.a += '\\', '
+    s.a += descend
+    s.a += ')" />'
     s.a += '</div></td>'  // end of recording_imgs
 %// if (!LiveSetup().GetTvscraperImageDir().empty() ) {
     s.a += '<td class=\"space\">'
@@ -399,11 +428,12 @@ function RecordingsSt_int(s, level, displayFolder, data) {
     let label = obj[9] + '<$ tr(" - ") $>' + obj[14]
     let xsVisibleIcons = 2;       // the invariant edit and delete icons
     let xsInvisibleIcons = 0;     // the small-screen invisible stream icons
+    if (recycle_bin == 0) {
 %   if (cDevice::PrimaryDevice() && cDevice::PrimaryDevice()->HasDecoder() ) {
       RecordingActionS(s, obj[0], "vdr_request/play_recording?param=", "play.png", label, "<$tr("Play this recording")$>")
       xsVisibleIcons++;
 %   }
-%   if (LiveFeatures<features::streamdev_server>().Loaded()) {
+%   if (LiveFeatures<features::streamdev_server>().Loaded() ) {
 %     // use same logic as in pageelems.epg_tool_box
 %     if (LiveSetup().GetUseStreamdev()) {
         RecordingActionStream(s, obj[0], label)
@@ -412,12 +442,18 @@ function RecordingsSt_int(s, level, displayFolder, data) {
       RecordingActionPlaylist(s, obj[0], label)
       xsInvisibleIcons++
 %   }
+    }
 %   if (LiveSetup().GetShowIMDb() ) {
       IMDbS(s, obj[2], obj[14], label)
       xsVisibleIcons++;
 %   }
-    RecordingActionS(s, obj[0], "edit_recording.html?recid=", "edit.png", label, "<$tr("Edit recording")$>")
-    RecordingActionS(s, obj[0], "epginfo.html?epgid=del_", "del.png", label, "<$tr("Delete this recording")$>")
+    if (recycle_bin == 0) {
+      RecordingActionS(s, obj[0], "edit_recording.html?recid=", "edit.png", label, "<$tr("Edit recording")$>")
+      RecordingActionS(s, obj[0], "epginfo.html?epgid=del_", "del.png", label, "<$tr("Delete this recording")$>")
+    } else {
+      RecordingActionS(s, obj[0], "epginfo.html?epgid=res_", "restore.png", label, "<$tr("Restore this recording")$>")
+      RecordingActionS(s, obj[0], "epginfo.html?epgid=pur_", "del.png", label, "<$tr("Permanently delete this recording")$>\\n<$tr("Warning: This cannot be undone!")$>")
+    }
     let xsClassName = 'xs-visible-' + xsVisibleIcons
     xsClassName += ' xs-invisible-' + xsInvisibleIcons
     xsClassName += ' xs-columns-' + Math.floor((xsVisibleIcons + 2) / 3)
@@ -425,4 +461,20 @@ function RecordingsSt_int(s, level, displayFolder, data) {
     s.a += '</div></td></tr>'
   }
   s.a += '</table></div></li>'
+}
+
+function gettext_Expand_this_folder() {
+  return '<$ tr("Expand this folder") $>';
+}
+
+function gettext_Collapse_this_folder() {
+  return '<$ tr("Collapse this folder") $>';
+}
+
+function gettext_Checked_none() {
+  return '<$ tr("Checked$none") $>';
+}
+
+function gettext_Checked_all() {
+  return '<$ tr("Checked$all") $>';
 }

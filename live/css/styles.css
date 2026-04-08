@@ -514,7 +514,7 @@
 
 @property --button-width {
   syntax: "<length>";
-  initial-value: 100px;
+  initial-value: 120px;
   inherits: false;
 }
 
@@ -590,7 +590,7 @@ body {
   display: flex;
   flex-flow: column;
   width: 100vw;         /* required to achieve a horizontal flexbox overflow */
-  height: 100vh;        /* required to achieve a vertical flexbox overflow */
+  height: 100svh;       /* required to achieve a vertical flexbox overflow, svh required for mobile */
   margin: 0px;
   padding: 0px;
   background: var(--body-background-color);
@@ -629,14 +629,14 @@ select {
 }
 
 input[type=radio] {
-  height: calc(var(--text-font-size));
-  width: calc(var(--text-font-size));
+  height: var(--text-font-size);
+  width: var(--text-font-size);
   accent-color: var(--input-accent-color);
 }
 
 input[type=checkbox] {
-  height: calc(var(--text-font-size));
-  width: calc(var(--text-font-size));
+  height: var(--text-font-size);
+  width: var(--text-font-size);
   accent-color: var(--input-accent-color);
 }
 
@@ -774,7 +774,6 @@ div.selection {
 }
 
 .more {
-  cursor: pointer;
   font-weight: bold;
 }
 
@@ -994,9 +993,22 @@ div.info-win.aboutBox {
   min-width: calc(3 * var(--margin-left-right) + 2 * var(--margin-left-right) + 2 * var(--infowin-label-width) + 15px );
 }
 
-div.info-win.info-del {
+div.info-win.info-del,
+div.info-win.info-des,
+div.info-win.info-det,
+div.info-win.info-pur,
+div.info-win.info-res {
   min-width: calc(3 * var(--margin-left-right) + 2 * var(--infowin-body-margin) + 2 * var(--infowin-label-width) + 15px );
-  min-height: calc(var(--infowin-title-height) + 2 * var(--text-line-height) + 7 * var(--margin-top-bottom));
+  min-height: calc(var(--infowin-title-height) + 2 * var(--text-line-height) + 10 * var(--margin-top-bottom));
+}
+
+div.info-win.info-del:has(.object-list),
+div.info-win.info-des:has(.object-list),
+div.info-win.info-det:has(.object-list),
+div.info-win.info-pur:has(.object-list),
+div.info-win.info-res:has(.object-list) {
+  min-height: calc(var(--infowin-title-height) + 3 * var(--text-line-height) + 0lh + 0 * var(--text-line-gap) + 10 * var(--margin-top-bottom));
+  max-height: 70svh;
 }
 
 .info-win .info-win-top {
@@ -1053,7 +1065,29 @@ img.iconic.button.recording-expander, /* for the tree view */
   background-size: var(--iconic-button-width, 16px) var(--iconic-button-height, 16px);
 }
 
+img.iconic.button.recording-select-all, /* for the tree view */
+.info-win .info-win-top img.iconic.button {
+  cursor: default;
+  background: transparent url(../img/icon_small.png) no-repeat top right;
+  background-size: var(--iconic-button-width, 16px) var(--iconic-button-height, 16px);
+}
+
+img.iconic.button.recording-deselect-all, /* for the tree view */
+.info-win .info-win-top img.iconic.button {
+  cursor: default;
+  background: transparent url(../img/icon_small.png) no-repeat top right;
+  background-size: var(--iconic-button-width, 16px) var(--iconic-button-height, 16px);
+}
+
 img.iconic.button.recording-expander:hover, /* for the tree view */
+.info-win .info-win-top img.iconic.button:hover {
+  background: transparent url(../img/icon_small_hovered.png) no-repeat top right;
+}
+img.iconic.button.recording-select-all:hover, /* for the tree view */
+.info-win .info-win-top img.iconic.button:hover {
+  background: transparent url(../img/icon_small_hovered.png) no-repeat top right;
+}
+img.iconic.button.recording-deselect-all:hover, /* for the tree view */
 .info-win .info-win-top img.iconic.button:hover {
   background: transparent url(../img/icon_small_hovered.png) no-repeat top right;
 }
@@ -1071,8 +1105,12 @@ img.iconic.button.recording-expander:hover, /* for the tree view */
   border-bottom: none;
 }
 
-.info-win.info-del .info-win-body {
-  min-height: calc(var(--button-height) + 4 * var(--margin-top-bottom));
+.info-win.info-del .info-win-body,
+.info-win.info-des .info-win-body,
+.info-win.info-det .info-win-body,
+.info-win.info-pur .info-win-body,
+.info-win.info-res .info-win-body {
+  min-height: unset;    /* let the buttons control the height */
 }
 
 .info-win .info-win-resize {
@@ -1121,6 +1159,11 @@ div#header {
 }
 
 div#navigation {
+  margin-bottom: var(--menubar-gap);
+}
+
+div#navigation:has(div#pagemenu) {
+  margin-bottom: 0px;
 }
 
 div.page_header {
@@ -1155,6 +1198,12 @@ div#menu div.menubar div.choices {
   line-height: var(--text-line-height);
 }
 
+div#menu .inactive {
+  color: var(--menu-color-inactive);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 div#menu a {
   color: var(--menu-color);
   font-weight: bold;
@@ -1176,21 +1225,24 @@ div#content {
   overflow: auto;
   padding: 0px var(--body-margin);
 }
-
-div#content > div.spacebar:first-child {
-  top: 0px;
-  position: sticky;
-  height: var(--spacebar-height);
-  width: calc(100vw - 2 * var(--body-margin));
-  background: transparent linear-gradient(to bottom, var(--body-background-color), transparent);
+div#content:not(:has(table.multischedule)) {
+  overflow-x: inherit;  /* could also be set to 'hidden' */
 }
 
-div#content > div.spacebar:last-child {
+div#content > div.spacebar {
   bottom: 0px;
   position: sticky;
   height: var(--spacebar-height);
   width: calc(100vw - 2 * var(--body-margin));
   background: transparent linear-gradient(to top, var(--body-background-color), transparent);
+}
+
+div#content > div.spacebar:first-of-type {
+  top: 0px;
+  position: sticky;
+  height: var(--spacebar-height);
+  width: calc(100vw - 2 * var(--body-margin));
+  background: transparent linear-gradient(to bottom, var(--body-background-color), transparent);
 }
 
 
@@ -1263,6 +1315,17 @@ div#pagemenu div.menubar {
 div#pagemenu div.menubar div.choices {
   color: var(--pagemenu-color);
   line-height: var(--text-line-height);
+}
+
+div#pagemenu div.menubar .inactive {
+  color: var(--menu-color-inactive);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+div#pagemenu div.menubar .label,
+div#pagemenu div.menubar .tools {
+  white-space: nowrap;
 }
 
 div#pagemenu div.bottom {
@@ -1429,6 +1492,10 @@ button {
   text-align: center;
 }
 
+.tabular button {
+  height: 100%;
+}
+
 button:hover {
   font-weight: bold;
 }
@@ -1472,8 +1539,13 @@ button.yellow {
   margin-left: 0px;
 }
 
-#form_recordings > div > button {
-  min-width: calc(var(--button-width) * 1.2);
+#form_recordings div.button-panel div.buttons button.delete {
+  min-width: calc(var(--button-width) * 2.0);
+}
+
+#form_recordings div.button-panel div.buttons button.restore,
+#form_recordings div.button-panel div.buttons button.purge {
+  min-width: calc(var(--button-width) * 2.5);
 }
 
 
@@ -1489,7 +1561,10 @@ table td.buttonpanel {
 table td.toprow {
 }
 
-table td.bottomrow {
+table td.bottomrow,
+table.multischedule > tbody > tr:last-of-type > td.time,
+table.multischedule > tbody > tr:last-of-type > td.event,
+table.form > tbody > tr:last-of-type > td {
   border-bottom: var(--listing-border-width) solid var(--listing-border-color) !important;
 }
 
@@ -1545,7 +1620,7 @@ div.station {
   min-width: calc(8ch + 40px);
 }
 
-div.station a, td.channel a {
+div.station a, th.channel a, td.channel a {
   color: var(--infowin-title-color);
   font-weight: bold;
 }
@@ -1935,33 +2010,49 @@ table.multischedule tr {
 table.multischedule tr.header {
 }
 
-table.multischedule tr.header td {
-  height: inherit;
+table.form > tbody > tr.head > td,
+table.listing > tbody > tr.head > td,
+table.recordings-list > tbody > tr.head > td,
+table.multischedule tr.header th,
+div.event_collection div.event div.station {
+  top: 0px;   /* required for stickiness */
+  position: sticky;
+  /*! height: inherit; */
   box-sizing: border-box;
+}
+
+table.multischedule tr.header th.time,
+table.multischedule tr.header th.channel,
+table.form > tbody > tr.head:first-of-type > td,
+table.listing > tbody > tr.head:first-of-type > td,
+table.recordings-list > tbody > tr.head > td,
+div.event_collection div.event div.station {
+  /* to avoid fragments of column borders aside sticky headers */
+  background: var(--body-background-color);
 }
 
 @-moz-document url-prefix() {
 
   /* as Firefox has a different flexbox-height logic */
-  table.multischedule tr.header td {
+  table.multischedule tr.header th {
     height: 100%;
   }
 
 }
 
-table.multischedule tr.header td.time {
+table.multischedule tr.header th.time {
   padding: 0px;
 }
 
-table.multischedule tr.header td.time div.boxheader {
+table.multischedule tr.header th.time div.boxheader {
   text-align: center;
   justify-content: center;
 }
 
-table.multischedule tr.header td.spacer {
+table.multischedule tr.header th.spacer {
 }
 
-table.multischedule tr.header td.channel {
+table.multischedule tr.header th.channel {
 }
 
 table.multischedule tr.header div.flexbox {
@@ -1977,22 +2068,24 @@ table.multischedule tr.header div.boxheader {
   box-sizing: border-box;
 }
 
-table.multischedule tr.header td .caption {
+table.multischedule tr.header th .caption {
   overflow: hidden;
 }
 
-table.multischedule tr.header td .caption {
+table.multischedule tr.header th .caption {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+table.multischedule th.time, table.multischedule th.spacer,
 table.multischedule td.time, table.multischedule td.spacer {
   padding: var(--margin-top-bottom) var(--margin-left-right);
   text-align: center;
 }
 
-table.multischedule tr td.event {
+table.multischedule tr td.event,
+table.multischedule > tbody > tr:last-of-type > td.time.even {
   background: linear-gradient(to top,var(--listing-row-background-color-bottom), var(--listing-row-background-color-top) var(--listing-row-background-gradient-height), var(--listing-row-background-color-top));
   border-bottom: var(--listing-border-width) solid var(--listing-row-border-color);
   vertical-align: top;
@@ -2023,7 +2116,9 @@ table.multischedule tr td.leftcol {
   padding-right: var(--margin-left-right);
 }
 
-table.multischedule td.channel, table.multischedule div.content1 {
+table.multischedule th.channel,
+table.multischedule td.channel,
+table.multischedule div.content1 {
   min-width: 15em;
   max-width: 30em;
 }
@@ -2109,15 +2204,15 @@ div.recordings ul {
   list-style-type: none;
 }
 
-div.recordings > ul > li:last-of-type:has(ul:is([style*="display: none"])) > div.recording_item  {
+form div.recordings ul > li:last-of-type:has(> ul:is([style*="display: none"])) > div.recording_item  {
   /* discard row bottom border if last directory is collapsed */
-  /*! border-bottom: none; */       /* selector to be revised */
-}
+  border-bottom: none;
+ }
 
-div.recordings > ul > li:last-of-type > ul tr.recording_item:last-child {
+form div.recordings > ul > li:last-of-type tr.recording_item:last-child {
   /* discard row bottom border of last recording */
-  /*! border-bottom: none; */       /* selector to be revised */
-}
+  border-bottom: none;
+ }
 
 /* 'div.recording_item' refers to a folder */
 
@@ -2553,29 +2648,34 @@ table.form > tbody > tr.permissions > td.rightcol > div {
   margin: var(--text-line-gap) 0px;
 }
 
-table.form > tbody > tr > td div.submission {
-  display: flex;
-  flex-flow: row nowrap;
-  justify-content: space-between;
-  gap: var(--margin-top-bottom) calc(var(--margin-left-right) * 2);
+form div.message {
+  margin: var(--margin-top-bottom) 0px;
 }
 
-table.form > tbody > tr > td div.warning {
-  flex-shrink: 1;
-  max-width: 60vw;;
-  margin: var(--margin-top-bottom) var(--margin-left-right);
-  color: var(--listing-color-highlight);
+div.message {
+  color: var(--message-color);
   font-weight: bold;
   text-align: left;
 }
 
-table.form > tbody > tr > td div.submission div.buttons {
+div.message.warning {
+  color: var(--warning-color);
+}
+
+div.message.error {
+  color: var(--error-color);
+}
+
+form div.button-panel {
+  width: 100%;
+}
+
+div.buttons {
   display: flex;
+  align-items: center;
   flex-flow: row wrap;
-  gap: var(--margin-top-bottom) var(--margin-left-right);
-  flex-shrink: 0;
-  margin: var(--margin-top-bottom) var(--margin-left-right);
-  justify-content:  right;
+  gap: var(--margin-top-bottom) calc(var(--margin-left-right) * 2);
+  margin: var(--margin-top-bottom) 0px;
 }
 
 table.dependent {
@@ -2874,6 +2974,43 @@ div.epg_content div.about_section div.about_right img {
 div.epg_content div.about_line {
   padding: var(--margin-top-bottom) calc(2 * var(--margin-left-right));
   color: var(--infowin-color);
+}
+
+div.epg_content.confirmation {
+  display: flex;
+  flex-flow: column;
+}
+
+div.epg_content.confirmation div.about_head:has(.object-list) {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+  min-height: calc(calc(var(--margin-top-bottom) + var(--text-line-gap)) * 2 + 1lh);
+}
+
+div.epg_content.confirmation div.about_head:has(.object-list) div.prompt {
+  padding-bottom: var(--margin-top-bottom);
+}
+
+div.epg_content.confirmation div.about_head div.object-list {
+  display: flex;
+  flex-flow: column;
+  overflow-y: auto;
+}
+
+div.epg_content.confirmation div.object-list ol,
+div.epg_content.confirmation div.object-list ul {
+  margin: 0px;
+  padding-left: 3ch;  /* set to 0ch for no marker */
+}
+
+div.epg_content.confirmation div.object-list ul > li,
+div.epg_content.confirmation div.object-list ol > li {
+  margin: var(--text-line-gap) 0px;
+}
+
+div.epg_content.confirmation div.message {
+  padding: var(--margin-top-bottom)  var(--margin-left-right) 0px var(--margin-left-right);
 }
 
 div.thumb {
