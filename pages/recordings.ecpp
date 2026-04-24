@@ -163,7 +163,7 @@ function addEventRec_r(s, eventid, title, folder, shortText, description) {
   addEventRec(s, 'recording_', eventid, http_params, title, folder, shortText, description)
 }
 </script>
-<script type="text/javascript" src="js/live/treeview.js"></script>
+<script type="text/javascript" src="js/live/treeview.js?st=<$cToSvInt(LiveSetup().GetVdrStart() )$>"></script>
 %if (lastRecycle_bin != currentRecycle_bin || lastFlat != currentFlat || last_page != "recordings") {
 <# clear at first call or when the context changes #>
   <script type="text/javascript">

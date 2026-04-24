@@ -762,14 +762,15 @@ tCompRec RecordingsItemPtrCompare::getComp(RecordingsManager::eSortOrder sortOrd
   }
 }
 
-bool searchNameDesc(RecordingsItemRec *&RecItem, const std::vector<RecordingsItemRec*> *RecItems, const cEvent *event, cScraperVideo *scraperVideo) {
-  if (RecItems->empty() ) return false;  // there are no recordings
+bool searchNameDesc(RecordingsItemRec *&RecItem, const cEvent *event, cScraperVideo *scraperVideo) {
 
 // find all recordings with equal name
   RecordingsItemRec dummy_o(event, scraperVideo);
   RecordingsItemRec* dummy = &dummy_o;
   dummy->finalize();
-  const auto equalName = std::equal_range(RecItems->begin(), RecItems->end(), dummy, RecordingsItemPtrCompare::ByDuplicatesName);
+  const std::vector<RecordingsItemRec *> *recItems = RecordingsManager::allRecordings(RecordingsManager::eSortOrder::duplicatesLanguage, 0);
+  if (recItems->empty() ) return false;  // there are no recordings
+  const auto equalName = std::equal_range(recItems->begin(), recItems->end(), dummy, RecordingsItemPtrCompare::ByDuplicatesName);
   if (equalName.first == equalName.second) return false; // there is no recording with this name
 
 // find all recordings with matching short text / description / language

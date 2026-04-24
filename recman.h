@@ -226,7 +226,7 @@ namespace vdrlive {
       static tCompRec getComp(RecordingsManager::eSortOrder sortOrder);
   };
 // search a recording matching an EPG entry. The EPG entry is given with Name, ShortText, Description, Duration, scraperOverview
-  bool searchNameDesc(RecordingsItemRec *&RecItem, const std::vector<RecordingsItemRec*> *RecItems, const cEvent *event, cScraperVideo *scraperVideo);
+  bool searchNameDesc(RecordingsItemRec *&RecItem, const cEvent *event, cScraperVideo *scraperVideo);
 
   /**
    *  A recordings item that represents a real recording. This is

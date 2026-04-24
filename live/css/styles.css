@@ -996,7 +996,7 @@ div.info-win.aboutBox {
 div.info-win {
   --confirmation-title-bar-height: calc(var(--infowin-title-height) + 2 * var(--text-line-gap));
   --confirmation-prompt-height: calc(2 * var(--infowin-border-width) + 2 * var(--margin-top-bottom) + 1lh);
-  --confirmation-list-height: calc(var(--margin-top-bottom) + 2 * var(--text-line-gap) + 1lh);
+  --confirmation-list-height: calc(var(--margin-top-bottom) + 2 * var(--text-line-gap) + 2lh);
   --confirmation-warning-height: calc(var(--margin-top-bottom) + 1lh);
   --confirmation-label-height: calc(var(--margin-top-bottom) + 1lh);
   --confirmation-form-height: calc(8 * var(--margin-top-bottom) + var(--infowin-border-width) + var(--button-height));

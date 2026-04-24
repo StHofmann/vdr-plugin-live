@@ -78,7 +78,7 @@ std::string active_r;
 </%cpp>
 <!DOCTYPE html>
 <html>
-  <script type="text/javascript" src="js/live/createHtml.js"></script>
+  <script type="text/javascript" src="js/live/createHtml.js?st=<$cToSvInt(LiveSetup().GetVdrStart() )$>"></script>
   <script>
     back_depending_referrer(2, <$ history_num_back $>);
   </script>

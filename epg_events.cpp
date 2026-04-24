@@ -457,8 +457,7 @@ bool appendEpgItem(cToSvConcat<0> &epg_item, RecordingsItemRec *&recItem, const 
   cGetScraperVideo getScraperVideo(Event, nullptr);
   getScraperVideo.call(LiveSetup().GetPluginTvscraper());
 
-  const std::vector<RecordingsItemRec *> *recItems = RecordingsManager::allRecordings(RecordingsManager::eSortOrder::duplicatesLanguage, 0);
-  bool recItemFound = searchNameDesc(recItem, recItems, Event, getScraperVideo.m_scraperVideo.get());
+  bool recItemFound = searchNameDesc(recItem, Event, getScraperVideo.m_scraperVideo.get());
 
   epg_item.append("[\"");
 // [0] : EPG ID  (without event_)

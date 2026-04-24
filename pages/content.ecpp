@@ -16,6 +16,7 @@ bool logged_in(false);
 </%session>
 <%args>
 int thumb=0;  // 0:false, 1:true. If true, the image is used as thumb and the size will be resuced according to --thumb_size
+std::string cache_max_age="2592000";   // Time in seconds this file will be cached by the browser
 </%args>
 <%cpp>
 std::string mime;
@@ -65,7 +66,7 @@ if (browserTime == mtime) {
 }
 // dsyslog("vdrlive::content: mimetype(%s), path = %s, modified", mime.c_str(), path.c_str());
 
-reply.setHeader(tnt::httpheader::cacheControl, "public, max-age=2592000"); // cache for 30 days, even when URL has parameters
+reply.setHeader(tnt::httpheader::cacheControl, concat("public, max-age=", cache_max_age));
 reply.setHeader(tnt::httpheader::lastModified, mtime);
 reply.setContentType(mime);
 reply.setDirectMode();
